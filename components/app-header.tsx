@@ -1,7 +1,11 @@
 import Link from "next/link";
-import { LinkIcon, PlusIcon } from "./icons";
+import { FolderIcon, LinkIcon, PlusIcon } from "./icons";
 
-export function AppHeader() {
+type AppHeaderProps = {
+  onNewFolder: () => void;
+};
+
+export function AppHeader({ onNewFolder }: AppHeaderProps) {
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--header-background)] backdrop-blur-xl">
       <div className="mx-auto flex h-[68px] w-full max-w-[1440px] items-center justify-between px-5 sm:px-7 lg:px-10">
@@ -14,13 +18,25 @@ export function AppHeader() {
           </span>
         </Link>
 
-        <Link
-          href="/new"
-          className="primary-button flex h-11 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 text-[14px] font-bold text-white shadow-[var(--shadow-button)] sm:px-[18px]"
-        >
-          <PlusIcon className="h-[18px] w-[18px]" />
-          새 링크
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onNewFolder}
+            aria-label="새 폴더"
+            className="secondary-button flex h-11 items-center gap-1.5 rounded-xl bg-[var(--surface-accent)] px-3 text-[14px] font-bold text-[var(--accent-hover)] sm:px-4"
+          >
+            <FolderIcon className="h-[18px] w-[18px]" />
+            <span className="hidden sm:inline">새 폴더</span>
+          </button>
+          <Link
+            href="/new"
+            aria-label="새 링크"
+            className="primary-button flex h-11 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3 text-[14px] font-bold text-white shadow-[var(--shadow-button)] sm:px-[18px]"
+          >
+            <PlusIcon className="h-[18px] w-[18px]" />
+            <span className="hidden min-[420px]:inline">새 링크</span>
+          </Link>
+        </div>
       </div>
     </header>
   );

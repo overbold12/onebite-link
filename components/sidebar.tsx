@@ -6,6 +6,7 @@ type SidebarProps = {
   folders: Folder[];
   totalCount: number;
   activeFolderId?: string | null;
+  onNewFolder: () => void;
 };
 
 const folderColorClass: Record<string, string> = {
@@ -15,7 +16,7 @@ const folderColorClass: Record<string, string> = {
   inspiration: "text-[var(--folder-inspiration)]",
 };
 
-export function Sidebar({ folders, totalCount, activeFolderId }: SidebarProps) {
+export function Sidebar({ folders, totalCount, activeFolderId, onNewFolder }: SidebarProps) {
   return (
     <aside className="relative w-full shrink-0 border-b border-[var(--border)] bg-[var(--surface)] px-5 py-4 md:sticky md:top-[68px] md:h-[calc(100vh-68px)] md:w-[232px] md:self-start md:border-b-0 md:border-r md:px-4 md:py-7 lg:w-[248px] lg:px-5">
       <nav aria-label="링크 폴더" className="mx-auto max-w-2xl md:mx-0">
@@ -39,6 +40,7 @@ export function Sidebar({ folders, totalCount, activeFolderId }: SidebarProps) {
           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">Folders</p>
           <button
             type="button"
+            onClick={onNewFolder}
             className="icon-button rounded-lg p-1.5 text-[var(--text-muted)]"
             aria-label="새 폴더 만들기"
           >
@@ -58,7 +60,7 @@ export function Sidebar({ folders, totalCount, activeFolderId }: SidebarProps) {
               }`}
               aria-current={activeFolderId === folder.id ? "page" : undefined}
             >
-              <FolderIcon className={`h-[18px] w-[18px] ${folderColorClass[folder.id] ?? "text-[var(--text-muted)]"}`} />
+              <FolderIcon className={`h-[18px] w-[18px] ${folderColorClass[folder.id] ?? "text-[var(--folder-new)]"}`} />
               <span>{folder.name}</span>
               <span className="ml-1 text-[11px] text-[var(--text-muted)] md:ml-auto">{folder.count}</span>
             </Link>
