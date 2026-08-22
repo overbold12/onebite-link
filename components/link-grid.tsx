@@ -1,3 +1,6 @@
+"use client";
+
+import { useStoredBookmarks } from "@/hooks/use-bookmarks";
 import type { Bookmark } from "./types";
 import { SearchIcon } from "./icons";
 import { LinkCard } from "./link-card";
@@ -7,6 +10,7 @@ type LinkGridProps = {
   title?: string;
   eyebrow?: string;
   description?: string;
+  folderId?: string;
 };
 
 export function LinkGrid({
@@ -14,7 +18,14 @@ export function LinkGrid({
   title = "모든 링크",
   eyebrow = "My collection",
   description = "저장해 둔 링크를 한눈에 확인해 보세요.",
+  folderId,
 }: LinkGridProps) {
+  const storedBookmarks = useStoredBookmarks();
+  const visibleStoredBookmarks = folderId
+    ? storedBookmarks.filter((bookmark) => bookmark.folderId === folderId)
+    : storedBookmarks;
+  const allBookmarks = [...visibleStoredBookmarks, ...bookmarks];
+
   return (
     <section aria-labelledby="links-title">
       <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
@@ -24,7 +35,7 @@ export function LinkGrid({
             <h1 id="links-title" className="text-[28px] font-extrabold tracking-[-0.04em] text-[var(--text)] sm:text-[32px]">
               {title}
             </h1>
-            <span className="flex h-6 min-w-6 items-center justify-center rounded-lg bg-[var(--surface)] px-1.5 text-[12px] font-bold text-[var(--text-muted)] shadow-[var(--shadow-card)]">{bookmarks.length}</span>
+            <span className="flex h-6 min-w-6 items-center justify-center rounded-lg bg-[var(--surface)] px-1.5 text-[12px] font-bold text-[var(--text-muted)] shadow-[var(--shadow-card)]">{allBookmarks.length}</span>
           </div>
           <p className="mt-2 text-[14px] leading-6 text-[var(--text-sub)]">{description}</p>
         </div>
@@ -41,8 +52,8 @@ export function LinkGrid({
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 xl:gap-6">
-        {bookmarks.map((bookmark) => (
-          <LinkCard key={bookmark.domain} bookmark={bookmark} />
+        {allBookmarks.map((bookmark) => (
+          <LinkCard key={bookmark.id} bookmark={bookmark} />
         ))}
       </div>
     </section>

@@ -1,13 +1,88 @@
+"use client";
+
+import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { saveBookmark } from "@/hooks/use-bookmarks";
 import { ChevronDownIcon, LinkIcon } from "./icons";
-import type { Folder } from "./types";
+import type { Folder, OpenGraphData } from "./types";
 
 type NewLinkFormProps = {
   folders: Folder[];
 };
 
 export function NewLinkForm({ folders }: NewLinkFormProps) {
+  const router = useRouter();
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError("");
+    setIsSaving(true);
+
+    const formData = new FormData(event.currentTarget);
+    const inputUrl = String(formData.get("url") ?? "").trim();
+    const normalizedUrl = /^https?:\/\//i.test(inputUrl) ? inputUrl : `https://${inputUrl}`;
+    const folderId = String(formData.get("folder") ?? "");
+    const folder = folders.find((item) => item.id === folderId);
+
+    if (!folder) {
+      setError("저장할 폴더를 선택해 주세요.");
+      setIsSaving(false);
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/open-graph", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: normalizedUrl }),
+      });
+      const payload: unknown = await response.json();
+
+      if (!response.ok) {
+        const message =
+          typeof payload === "object" &&
+          payload !== null &&
+          "error" in payload &&
+          typeof payload.error === "string"
+            ? payload.error
+            : "링크 정보를 불러오지 못했어요.";
+        throw new Error(message);
+      }
+
+      const openGraph = payload as OpenGraphData;
+
+      saveBookmark({
+        id: crypto.randomUUID(),
+        url: openGraph.url,
+        title: openGraph.title,
+        description: openGraph.description,
+        domain: openGraph.domain,
+        thumbnail: openGraph.thumbnail,
+        folder: folder.name,
+        folderId: folder.id,
+        folderColor: folder.color,
+        icon: (openGraph.title || openGraph.domain).slice(0, 1).toUpperCase(),
+        iconColor: "#3182f6",
+      });
+
+      router.push("/");
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "링크를 저장하지 못했어요. 잠시 후 다시 시도해 주세요.",
+      );
+      setIsSaving(false);
+    }
+  };
+
   return (
-    <form className="mt-8 max-w-[680px] rounded-2xl bg-[var(--surface)] p-5 shadow-[var(--shadow-card)] sm:p-8">
+    <form
+      onSubmit={handleSubmit}
+      className="mt-8 max-w-[680px] rounded-2xl bg-[var(--surface)] p-5 shadow-[var(--shadow-card)] sm:p-8"
+    >
       <div>
         <label htmlFor="url" className="text-[14px] font-bold text-[var(--text)]">
           링크
@@ -17,10 +92,13 @@ export function NewLinkForm({ folders }: NewLinkFormProps) {
           <input
             id="url"
             name="url"
-            type="url"
+            type="text"
+            inputMode="url"
             required
             autoFocus
             autoComplete="url"
+            disabled={isSaving}
+            aria-invalid={error ? "true" : undefined}
             placeholder="https://example.com"
             className="min-w-0 flex-1 bg-transparent text-[15px] text-[var(--text)] outline-none placeholder:text-[var(--text-placeholder)]"
           />
@@ -42,19 +120,27 @@ export function NewLinkForm({ folders }: NewLinkFormProps) {
           >
             <option value="" disabled>폴더를 선택해 주세요</option>
             {folders.map((folder) => (
-              <option key={folder.name} value={folder.name}>{folder.name}</option>
+              <option key={folder.id} value={folder.id}>{folder.name}</option>
             ))}
           </select>
           <ChevronDownIcon className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-muted)]" />
         </div>
       </div>
 
-      <div className="mt-9 flex justify-end border-t border-[var(--border)] pt-6">
+      <p
+        aria-live="polite"
+        className={`mt-5 min-h-5 text-[13px] ${error ? "text-[var(--error)]" : "text-[var(--text-sub)]"}`}
+      >
+        {error || (isSaving ? "페이지 정보를 확인하고 있어요…" : "")}
+      </p>
+
+      <div className="mt-4 flex justify-end border-t border-[var(--border)] pt-6">
         <button
           type="submit"
+          disabled={isSaving}
           className="primary-button flex h-12 w-full items-center justify-center rounded-xl bg-[var(--accent)] px-7 text-[15px] font-bold text-white shadow-[var(--shadow-button)] sm:w-auto"
         >
-          링크 저장하기
+          {isSaving ? "저장 중…" : "확인"}
         </button>
       </div>
     </form>

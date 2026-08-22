@@ -140,6 +140,13 @@ select:focus-visible {
   transform: scale(0.98);
 }
 
+.primary-button:disabled {
+  cursor: not-allowed;
+  background: var(--disabled);
+  box-shadow: none;
+  transform: none;
+}
+
 .secondary-button:hover {
   background: var(--surface-accent-strong);
   color: var(--accent-hover);

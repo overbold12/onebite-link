@@ -1,4 +1,8 @@
+"use client";
+
+import { useState } from "react";
 import type { Bookmark } from "./types";
+import type { PreviewStyle } from "./types";
 import { ArrowUpRightIcon, MoreIcon } from "./icons";
 import { LinkPreview } from "./link-preview";
 
@@ -6,7 +10,7 @@ type LinkCardProps = {
   bookmark: Bookmark;
 };
 
-const iconClassByPreview: Record<Bookmark["preview"], string> = {
+const iconClassByPreview: Record<PreviewStyle, string> = {
   figma: "bg-[var(--figma-red)] text-white",
   github: "bg-[var(--text)] text-white",
   notion: "border border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text)]",
@@ -23,18 +27,38 @@ const folderDotClass: Record<string, string> = {
 };
 
 export function LinkCard({ bookmark }: LinkCardProps) {
+  const [thumbnailFailed, setThumbnailFailed] = useState(false);
+  const showThumbnail = bookmark.thumbnail && !thumbnailFailed;
+
   return (
     <article className="link-card group overflow-hidden rounded-2xl bg-[var(--surface)] shadow-[var(--shadow-card)]">
       <div className="h-[166px] overflow-hidden sm:h-[184px]">
         <div className="preview-art h-full">
-          <LinkPreview variant={bookmark.preview} />
+          {showThumbnail ? (
+            // OG images can come from any public host, so they cannot use a fixed next/image allowlist.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={bookmark.thumbnail ?? undefined}
+              alt=""
+              loading="lazy"
+              referrerPolicy="no-referrer"
+              onError={() => setThumbnailFailed(true)}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <LinkPreview variant={bookmark.preview ?? "medium"} />
+          )}
         </div>
       </div>
 
       <div className="p-5 sm:p-[22px]">
         <div className="flex items-start gap-3">
           <span
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[15px] font-black shadow-sm ${iconClassByPreview[bookmark.preview]}`}
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[15px] font-black shadow-sm ${
+              bookmark.preview
+                ? iconClassByPreview[bookmark.preview]
+                : "bg-[var(--accent)] text-white"
+            }`}
             aria-hidden="true"
           >
             {bookmark.icon}
@@ -60,7 +84,7 @@ export function LinkCard({ bookmark }: LinkCardProps) {
             {bookmark.folder}
           </span>
           <a
-            href={`https://${bookmark.domain}`}
+            href={bookmark.url}
             target="_blank"
             rel="noreferrer"
             className="visit-link ml-auto flex items-center gap-1 text-[12px] font-bold text-[var(--accent)]"
