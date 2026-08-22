@@ -12,11 +12,11 @@ type AppShellProps = {
 
 export function AppShell({ children, folders, totalCount, activeFolderId }: AppShellProps) {
   return (
-    <div className="min-h-screen bg-[#f7f8fb] text-[#17171c]">
+    <div className="min-h-screen bg-[var(--background)] text-[var(--text)]">
       <AppHeader />
-      <div className="mx-auto flex w-full max-w-[1600px]">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col md:flex-row">
         <Sidebar folders={folders} totalCount={totalCount} activeFolderId={activeFolderId} />
-        <main className="min-w-0 flex-1 px-5 pb-14 pt-8 sm:px-7 lg:px-10 lg:pt-10">
+        <main className="min-w-0 flex-1 px-5 pb-16 pt-8 sm:px-7 md:px-8 lg:px-12 lg:pb-20 lg:pt-12">
           {children}
         </main>
       </div>

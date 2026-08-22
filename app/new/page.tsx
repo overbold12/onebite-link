@@ -12,11 +12,11 @@ export default function NewLinkPage() {
   return (
     <AppShell folders={folders} totalCount={bookmarks.length}>
       <section aria-labelledby="new-link-title">
-        <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#8c82df]">Add bookmark</p>
-        <h1 id="new-link-title" className="mt-1.5 text-[26px] font-extrabold tracking-[-0.045em] text-[#1d1c22] sm:text-[30px]">
+        <p className="inline-flex rounded-lg bg-[var(--surface-accent)] px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--accent-hover)]">Add bookmark</p>
+        <h1 id="new-link-title" className="mt-3 text-[28px] font-extrabold tracking-[-0.04em] text-[var(--text)] sm:text-[32px]">
           새 링크 추가
         </h1>
-        <p className="mt-2 text-[13px] text-[#918e98]">기억해 두고 싶은 링크를 나만의 폴더에 저장하세요.</p>
+        <p className="mt-2 text-[14px] leading-6 text-[var(--text-sub)]">기억해 두고 싶은 링크를 나만의 폴더에 저장하세요.</p>
         <NewLinkForm folders={folders} />
       </section>
     </AppShell>

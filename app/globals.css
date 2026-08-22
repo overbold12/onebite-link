@@ -1,13 +1,75 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f8fb;
-  --foreground: #17171c;
+  --background: #f4f6f8;
+  --surface: #ffffff;
+  --surface-subtle: #f8fafb;
+  --surface-hover: #f2f4f6;
+  --surface-accent: #e8f3ff;
+  --surface-accent-strong: #d9ecff;
+  --text: #191f28;
+  --text-sub: #6b7684;
+  --text-muted: #8b95a1;
+  --text-placeholder: #9da7b2;
+  --border: #e5e8eb;
+  --border-strong: #d8dde2;
+  --accent: #3182f6;
+  --accent-hover: #1b64da;
+  --accent-soft: #74b2ff;
+  --focus: rgba(49, 130, 246, 0.22);
+  --shadow-card: 0 2px 10px rgba(25, 31, 40, 0.05);
+  --shadow-card-hover: 0 14px 34px rgba(25, 31, 40, 0.1);
+  --shadow-button: 0 7px 18px rgba(49, 130, 246, 0.22);
+  --shadow-button-hover: 0 9px 22px rgba(27, 100, 218, 0.25);
+  --shadow-count: 0 1px 3px rgba(25, 31, 40, 0.06);
+  --header-background: rgba(255, 255, 255, 0.88);
+
+  --folder-design: #8b7cf6;
+  --folder-development: #3182f6;
+  --folder-articles: #f08c46;
+  --folder-inspiration: #20a66a;
+  --figma-red: #f24e1e;
+  --figma-coral: #ff7262;
+  --figma-purple: #a259ff;
+  --figma-blue: #1abcfe;
+  --figma-green: #0acf83;
+  --dribbble-pink: #ea4c89;
+  --preview-figma-bg: #f3f1ff;
+  --preview-figma-blob: #d9d4ff;
+  --preview-figma-line: #c9c4ee;
+  --preview-figma-line-soft: #e4e1f7;
+  --preview-figma-shadow: 0 12px 18px rgba(84, 68, 180, 0.18);
+  --preview-github-bg: #1d222b;
+  --preview-github-panel: #252b35;
+  --preview-github-red: #ff6b65;
+  --preview-github-yellow: #ffc75a;
+  --preview-github-green: #59cd78;
+  --preview-github-blue: #6b93bd;
+  --preview-notion-bg: #f4f2ed;
+  --preview-notion-ink: #292929;
+  --preview-notion-line: #dedbd4;
+  --preview-notion-line-soft: #e7e4de;
+  --preview-notion-shadow: 0 12px 30px rgba(68, 58, 40, 0.13);
+  --preview-dribbble-bg: #ffeaf2;
+  --preview-dribbble-blob: #f8bdd2;
+  --preview-dribbble-blob-warm: #ffd3a8;
+  --preview-dribbble-from: #ff8db6;
+  --preview-dribbble-to: #d95791;
+  --preview-dribbble-shadow: 0 15px 30px rgba(194, 65, 120, 0.25);
+  --preview-vercel-bg: #efeff1;
+  --preview-vercel-shadow: 0 14px 35px rgba(0, 0, 0, 0.1);
+  --preview-medium-bg: #dff1df;
+  --preview-medium-blob: #b7dab5;
+  --preview-medium-paper: #fcfbf4;
+  --preview-medium-ink: #1c1c18;
+  --preview-medium-line: #cac9c0;
+  --preview-medium-line-soft: #dfded5;
+  --preview-medium-shadow: 0 14px 30px rgba(58, 91, 55, 0.16);
 }
 
 @theme inline {
   --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-foreground: var(--text);
   --font-sans: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", Arial, sans-serif;
 }
 
@@ -23,17 +85,101 @@ body {
   min-height: 100vh;
   margin: 0;
   background: var(--background);
-  color: var(--foreground);
+  color: var(--text);
   font-family: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", Arial, sans-serif;
 }
 
 button,
-a {
+a,
+input,
+select {
   -webkit-tap-highlight-color: transparent;
 }
 
+a,
+button,
+input,
+select {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease,
+    box-shadow 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+}
+
 button:focus-visible,
-a:focus-visible {
-  outline: 3px solid rgba(108, 92, 231, 0.28);
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid var(--focus);
   outline-offset: 2px;
+}
+
+::selection {
+  background: var(--surface-accent-strong);
+  color: var(--accent-hover);
+}
+
+.brand-link:hover .brand-mark {
+  transform: rotate(-4deg) scale(1.03);
+}
+
+.primary-button:hover {
+  background: var(--accent-hover);
+  box-shadow: var(--shadow-button-hover);
+  transform: translateY(-1px);
+}
+
+.primary-button:active {
+  transform: scale(0.98);
+}
+
+.nav-item:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.nav-item-active:hover {
+  background: var(--surface-accent-strong);
+  color: var(--accent-hover);
+}
+
+.icon-button:hover {
+  background: var(--surface-hover);
+  color: var(--text-sub);
+}
+
+.link-card:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-4px);
+}
+
+.link-card:hover .preview-art {
+  transform: scale(1.025);
+}
+
+.preview-art {
+  transition: transform 0.35s ease;
+}
+
+.visit-link:hover {
+  color: var(--accent-hover);
+}
+
+.visit-link:hover svg {
+  transform: translate(1px, -1px);
+}
+
+.mobile-folder-list {
+  scrollbar-width: none;
+}
+
+.mobile-folder-list::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
