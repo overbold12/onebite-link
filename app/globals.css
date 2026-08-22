@@ -18,6 +18,8 @@
   --accent-soft: #74b2ff;
   --disabled: #dcdee3;
   --error: #f04452;
+  --error-hover: #d93645;
+  --error-surface: #fff0f1;
   --focus: rgba(49, 130, 246, 0.22);
   --overlay: rgba(25, 31, 40, 0.42);
   --shadow-card: 0 2px 10px rgba(25, 31, 40, 0.05);
@@ -26,6 +28,8 @@
   --shadow-button-hover: 0 9px 22px rgba(27, 100, 218, 0.25);
   --shadow-count: 0 1px 3px rgba(25, 31, 40, 0.06);
   --shadow-modal: 0 24px 70px rgba(25, 31, 40, 0.22);
+  --shadow-danger: 0 7px 18px rgba(240, 68, 82, 0.2);
+  --shadow-danger-hover: 0 9px 22px rgba(217, 54, 69, 0.24);
   --header-background: rgba(255, 255, 255, 0.88);
 
   --folder-design: #8b7cf6;
@@ -152,6 +156,16 @@ select:focus-visible {
   color: var(--text);
 }
 
+.danger-button:hover {
+  background: var(--error-hover);
+  box-shadow: var(--shadow-danger-hover);
+  transform: translateY(-1px);
+}
+
+.danger-button:active {
+  transform: scale(0.98);
+}
+
 .nav-item:hover {
   background: var(--surface-hover);
   color: var(--text);
@@ -165,6 +179,41 @@ select:focus-visible {
 .icon-button:hover {
   background: var(--surface-hover);
   color: var(--text-sub);
+}
+
+.folder-count {
+  opacity: 0;
+}
+
+.folder-delete-button:hover {
+  background: var(--error-surface);
+  color: var(--error);
+}
+
+.folder-delete-button:active {
+  transform: translateY(-50%) scale(0.94);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .folder-count {
+    opacity: 1;
+  }
+
+  .folder-delete-button {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .folder-row:hover .folder-count,
+  .folder-row:focus-within .folder-count {
+    opacity: 0;
+  }
+
+  .folder-row:hover .folder-delete-button,
+  .folder-row:focus-within .folder-delete-button {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 .link-card:hover {

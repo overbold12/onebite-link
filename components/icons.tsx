@@ -29,6 +29,14 @@ export function FolderIcon(props: IconProps) {
   );
 }
 
+export function TrashIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path d="M4.75 7.25h14.5M9.25 4.75h5.5M7 7.25l.65 11h8.7l.65-11M10 10.25v5M14 10.25v5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function MoreIcon(props: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>

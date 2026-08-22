@@ -1,12 +1,13 @@
 import Link from "next/link";
 import type { Folder } from "./types";
-import { FolderIcon, GridIcon, PlusIcon } from "./icons";
+import { FolderIcon, GridIcon, PlusIcon, TrashIcon } from "./icons";
 
 type SidebarProps = {
   folders: Folder[];
   totalCount: number;
   activeFolderId?: string | null;
   onNewFolder: () => void;
+  onDeleteFolder: (folder: Folder) => void;
 };
 
 const folderColorClass: Record<string, string> = {
@@ -16,7 +17,13 @@ const folderColorClass: Record<string, string> = {
   inspiration: "text-[var(--folder-inspiration)]",
 };
 
-export function Sidebar({ folders, totalCount, activeFolderId, onNewFolder }: SidebarProps) {
+export function Sidebar({
+  folders,
+  totalCount,
+  activeFolderId,
+  onNewFolder,
+  onDeleteFolder,
+}: SidebarProps) {
   return (
     <aside className="relative w-full shrink-0 border-b border-[var(--border)] bg-[var(--surface)] px-5 py-4 md:sticky md:top-[68px] md:h-[calc(100vh-68px)] md:w-[232px] md:self-start md:border-b-0 md:border-r md:px-4 md:py-7 lg:w-[248px] lg:px-5">
       <nav aria-label="링크 폴더" className="mx-auto max-w-2xl md:mx-0">
@@ -50,20 +57,32 @@ export function Sidebar({ folders, totalCount, activeFolderId, onNewFolder }: Si
 
         <div className="mobile-folder-list mt-2 flex gap-2 overflow-x-auto pb-1 md:block md:space-y-1 md:overflow-visible md:pb-0">
           {folders.map((folder) => (
-            <Link
-              key={folder.id}
-              href={`/folder/${folder.id}`}
-              className={`nav-item flex h-11 shrink-0 items-center gap-2.5 rounded-xl px-3 text-[14px] font-medium md:w-full ${
-                activeFolderId === folder.id
-                  ? "nav-item-active bg-[var(--surface-accent)] font-bold text-[var(--accent-hover)]"
-                  : "text-[var(--text-sub)]"
-              }`}
-              aria-current={activeFolderId === folder.id ? "page" : undefined}
-            >
-              <FolderIcon className={`h-[18px] w-[18px] ${folderColorClass[folder.id] ?? "text-[var(--folder-new)]"}`} />
-              <span>{folder.name}</span>
-              <span className="ml-1 text-[11px] text-[var(--text-muted)] md:ml-auto">{folder.count}</span>
-            </Link>
+            <div key={folder.id} className="folder-row relative shrink-0 md:w-full">
+              <Link
+                href={`/folder/${folder.id}`}
+                className={`nav-item flex h-11 items-center gap-2.5 rounded-xl px-3 pr-11 text-[14px] font-medium ${
+                  activeFolderId === folder.id
+                    ? "nav-item-active bg-[var(--surface-accent)] font-bold text-[var(--accent-hover)]"
+                    : "text-[var(--text-sub)]"
+                }`}
+                aria-current={activeFolderId === folder.id ? "page" : undefined}
+              >
+                <FolderIcon className={`h-[18px] w-[18px] shrink-0 ${folderColorClass[folder.id] ?? "text-[var(--folder-new)]"}`} />
+                <span className="min-w-0 truncate">{folder.name}</span>
+                <span className="folder-count ml-1 text-[11px] text-[var(--text-muted)] md:ml-auto">
+                  {folder.count}
+                </span>
+              </Link>
+              <button
+                type="button"
+                onClick={() => onDeleteFolder(folder)}
+                className="folder-delete-button absolute right-1.5 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--text-muted)]"
+                aria-label={`${folder.name} 폴더 삭제`}
+                title="폴더 삭제"
+              >
+                <TrashIcon className="h-[17px] w-[17px]" />
+              </button>
+            </div>
           ))}
         </div>
       </nav>
