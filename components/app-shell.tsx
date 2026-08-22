@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
-import { useStoredBookmarks } from "@/hooks/use-bookmarks";
+import { useDeletedBookmarks, useStoredBookmarks } from "@/hooks/use-bookmarks";
 import { AppHeader } from "./app-header";
 import { DeleteFolderModal } from "./delete-folder-modal";
 import { EditFolderModal } from "./edit-folder-modal";
@@ -108,6 +108,7 @@ type AppShellProps = {
 export function AppShell({ children, folders, totalCount, activeFolderId }: AppShellProps) {
   const router = useRouter();
   const storedBookmarks = useStoredBookmarks();
+  const deletedBookmarks = useDeletedBookmarks();
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [folderToEdit, setFolderToEdit] = useState<Folder | null>(null);
   const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
@@ -150,7 +151,11 @@ export function AppShell({ children, folders, totalCount, activeFolderId }: AppS
     ...folder,
     name: renamedFolders[folder.id] ?? folder.name,
     count:
-      folder.count +
+      Math.max(
+        0,
+        folder.count -
+          deletedBookmarks.filter((bookmark) => bookmark.folderId === folder.id).length,
+      ) +
       storedBookmarks.filter((bookmark) => bookmark.folderId === folder.id).length,
   }));
 
@@ -213,7 +218,7 @@ export function AppShell({ children, folders, totalCount, activeFolderId }: AppS
       <div className="mx-auto flex w-full max-w-[1440px] flex-col md:flex-row">
         <Sidebar
           folders={allFolders}
-          totalCount={totalCount + storedBookmarks.length}
+          totalCount={Math.max(0, totalCount - deletedBookmarks.length) + storedBookmarks.length}
           activeFolderId={activeFolderId}
           onNewFolder={() => setIsFolderModalOpen(true)}
           onEditFolder={setFolderToEdit}

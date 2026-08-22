@@ -3,11 +3,12 @@
 import { useState } from "react";
 import type { Bookmark } from "./types";
 import type { PreviewStyle } from "./types";
-import { ArrowUpRightIcon, MoreIcon } from "./icons";
+import { ArrowUpRightIcon, TrashIcon } from "./icons";
 import { LinkPreview } from "./link-preview";
 
 type LinkCardProps = {
   bookmark: Bookmark;
+  onDelete: (bookmark: Bookmark) => void;
 };
 
 const iconClassByPreview: Record<PreviewStyle, string> = {
@@ -26,12 +27,22 @@ const folderDotClass: Record<string, string> = {
   inspiration: "bg-[var(--folder-inspiration)]",
 };
 
-export function LinkCard({ bookmark }: LinkCardProps) {
+export function LinkCard({ bookmark, onDelete }: LinkCardProps) {
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
   const showThumbnail = bookmark.thumbnail && !thumbnailFailed;
 
   return (
-    <article className="link-card group overflow-hidden rounded-2xl bg-[var(--surface)] shadow-[var(--shadow-card)]">
+    <article className="link-card group relative overflow-hidden rounded-2xl bg-[var(--surface)] shadow-[var(--shadow-card)]">
+      <button
+        type="button"
+        onClick={() => onDelete(bookmark)}
+        className="link-delete-button absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--surface)] text-[var(--error)] shadow-[var(--shadow-card)]"
+        aria-label={`${bookmark.title} 링크 삭제`}
+        title="링크 삭제"
+      >
+        <TrashIcon className="h-[19px] w-[19px]" />
+      </button>
+
       <div className="h-[166px] overflow-hidden sm:h-[184px]">
         <div className="preview-art h-full">
           {showThumbnail ? (
@@ -67,13 +78,6 @@ export function LinkCard({ bookmark }: LinkCardProps) {
             <h2 className="truncate text-[16px] font-bold tracking-[-0.02em] text-[var(--text)]">{bookmark.title}</h2>
             <p className="mt-0.5 truncate text-[12px] text-[var(--text-muted)]">{bookmark.domain}</p>
           </div>
-          <button
-            type="button"
-            className="icon-button -mr-1 rounded-lg p-1.5 text-[var(--text-muted)]"
-            aria-label={`${bookmark.title} 더보기`}
-          >
-            <MoreIcon className="h-[18px] w-[18px]" />
-          </button>
         </div>
 
         <p className="mt-4 line-clamp-2 min-h-11 text-[13px] leading-[1.7] text-[var(--text-sub)]">{bookmark.description}</p>

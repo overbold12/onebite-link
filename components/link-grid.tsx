@@ -1,8 +1,14 @@
 "use client";
 
-import { useStoredBookmarks } from "@/hooks/use-bookmarks";
+import { useState } from "react";
+import {
+  deleteBookmark,
+  useDeletedBookmarks,
+  useStoredBookmarks,
+} from "@/hooks/use-bookmarks";
 import type { Bookmark } from "./types";
 import { SearchIcon } from "./icons";
+import { DeleteLinkModal } from "./delete-link-modal";
 import { LinkCard } from "./link-card";
 
 type LinkGridProps = {
@@ -20,11 +26,22 @@ export function LinkGrid({
   description = "저장해 둔 링크를 한눈에 확인해 보세요.",
   folderId,
 }: LinkGridProps) {
+  const [bookmarkToDelete, setBookmarkToDelete] = useState<Bookmark | null>(null);
   const storedBookmarks = useStoredBookmarks();
+  const deletedBookmarks = useDeletedBookmarks();
+  const deletedBookmarkIds = new Set(deletedBookmarks.map((bookmark) => bookmark.id));
   const visibleStoredBookmarks = folderId
     ? storedBookmarks.filter((bookmark) => bookmark.folderId === folderId)
     : storedBookmarks;
-  const allBookmarks = [...visibleStoredBookmarks, ...bookmarks];
+  const visibleInitialBookmarks = bookmarks.filter(
+    (bookmark) => !deletedBookmarkIds.has(bookmark.id),
+  );
+  const allBookmarks = [...visibleStoredBookmarks, ...visibleInitialBookmarks];
+
+  const handleConfirmDelete = (bookmark: Bookmark) => {
+    deleteBookmark(bookmark);
+    setBookmarkToDelete(null);
+  };
 
   return (
     <section aria-labelledby="links-title">
@@ -53,9 +70,18 @@ export function LinkGrid({
 
       <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 xl:gap-6">
         {allBookmarks.map((bookmark) => (
-          <LinkCard key={bookmark.id} bookmark={bookmark} />
+          <LinkCard
+            key={bookmark.id}
+            bookmark={bookmark}
+            onDelete={setBookmarkToDelete}
+          />
         ))}
       </div>
+      <DeleteLinkModal
+        bookmark={bookmarkToDelete}
+        onClose={() => setBookmarkToDelete(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </section>
   );
 }

@@ -243,6 +243,35 @@ select:focus-visible {
   transform: scale(1.025);
 }
 
+.link-delete-button:hover {
+  background: var(--error);
+  color: white;
+}
+
+.link-delete-button:active {
+  transform: scale(0.94);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .link-delete-button {
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(-4px) scale(0.96);
+  }
+
+  .link-card:hover .link-delete-button,
+  .link-card:focus-within .link-delete-button {
+    pointer-events: auto;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  .link-card:hover .link-delete-button:active,
+  .link-card:focus-within .link-delete-button:active {
+    transform: scale(0.94);
+  }
+}
+
 .preview-art {
   transition: transform 0.35s ease;
 }
