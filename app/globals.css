@@ -243,32 +243,37 @@ select:focus-visible {
   transform: scale(1.025);
 }
 
+.link-edit-button:hover {
+  background: var(--accent);
+  color: white;
+}
+
 .link-delete-button:hover {
   background: var(--error);
   color: white;
 }
 
+.link-edit-button:active,
 .link-delete-button:active {
   transform: scale(0.94);
 }
 
+.link-card-actions {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
 @media (hover: hover) and (pointer: fine) {
-  .link-delete-button {
+  .link-card-actions {
     pointer-events: none;
     opacity: 0;
     transform: translateY(-4px) scale(0.96);
   }
 
-  .link-card:hover .link-delete-button,
-  .link-card:focus-within .link-delete-button {
+  .link-card:hover .link-card-actions,
+  .link-card:focus-within .link-card-actions {
     pointer-events: auto;
     opacity: 1;
     transform: translateY(0) scale(1);
-  }
-
-  .link-card:hover .link-delete-button:active,
-  .link-card:focus-within .link-delete-button:active {
-    transform: scale(0.94);
   }
 }
 

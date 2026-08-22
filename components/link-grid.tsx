@@ -3,16 +3,20 @@
 import { useState } from "react";
 import {
   deleteBookmark,
+  updateBookmark,
+  useBookmarkEdits,
   useDeletedBookmarks,
   useStoredBookmarks,
 } from "@/hooks/use-bookmarks";
-import type { Bookmark } from "./types";
+import type { Bookmark, Folder } from "./types";
 import { SearchIcon } from "./icons";
 import { DeleteLinkModal } from "./delete-link-modal";
+import { EditLinkModal } from "./edit-link-modal";
 import { LinkCard } from "./link-card";
 
 type LinkGridProps = {
   bookmarks: Bookmark[];
+  folders: Folder[];
   title?: string;
   eyebrow?: string;
   description?: string;
@@ -21,26 +25,39 @@ type LinkGridProps = {
 
 export function LinkGrid({
   bookmarks,
+  folders,
   title = "모든 링크",
   eyebrow = "My collection",
   description = "저장해 둔 링크를 한눈에 확인해 보세요.",
   folderId,
 }: LinkGridProps) {
+  const [bookmarkToEdit, setBookmarkToEdit] = useState<Bookmark | null>(null);
   const [bookmarkToDelete, setBookmarkToDelete] = useState<Bookmark | null>(null);
   const storedBookmarks = useStoredBookmarks();
   const deletedBookmarks = useDeletedBookmarks();
+  const bookmarkEdits = useBookmarkEdits();
   const deletedBookmarkIds = new Set(deletedBookmarks.map((bookmark) => bookmark.id));
+  const editsByBookmarkId = new Map(bookmarkEdits.map((edit) => [edit.id, edit]));
   const visibleStoredBookmarks = folderId
     ? storedBookmarks.filter((bookmark) => bookmark.folderId === folderId)
     : storedBookmarks;
-  const visibleInitialBookmarks = bookmarks.filter(
-    (bookmark) => !deletedBookmarkIds.has(bookmark.id),
-  );
+  const visibleInitialBookmarks = bookmarks
+    .filter((bookmark) => !deletedBookmarkIds.has(bookmark.id))
+    .map((bookmark) => {
+      const edit = editsByBookmarkId.get(bookmark.id);
+      return edit ? { ...bookmark, ...edit } : bookmark;
+    })
+    .filter((bookmark) => !folderId || bookmark.folderId === folderId);
   const allBookmarks = [...visibleStoredBookmarks, ...visibleInitialBookmarks];
 
   const handleConfirmDelete = (bookmark: Bookmark) => {
     deleteBookmark(bookmark);
     setBookmarkToDelete(null);
+  };
+
+  const handleSaveEdit = (bookmark: Bookmark) => {
+    updateBookmark(bookmark);
+    setBookmarkToEdit(null);
   };
 
   return (
@@ -73,10 +90,20 @@ export function LinkGrid({
           <LinkCard
             key={bookmark.id}
             bookmark={bookmark}
+            onEdit={setBookmarkToEdit}
             onDelete={setBookmarkToDelete}
           />
         ))}
       </div>
+      {bookmarkToEdit ? (
+        <EditLinkModal
+          key={bookmarkToEdit.id}
+          bookmark={bookmarkToEdit}
+          folders={folders}
+          onClose={() => setBookmarkToEdit(null)}
+          onSave={handleSaveEdit}
+        />
+      ) : null}
       <DeleteLinkModal
         bookmark={bookmarkToDelete}
         onClose={() => setBookmarkToDelete(null)}

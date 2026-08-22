@@ -3,7 +3,11 @@
 import type { ReactNode } from "react";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
-import { useDeletedBookmarks, useStoredBookmarks } from "@/hooks/use-bookmarks";
+import {
+  useBookmarkEdits,
+  useDeletedBookmarks,
+  useStoredBookmarks,
+} from "@/hooks/use-bookmarks";
 import { AppHeader } from "./app-header";
 import { DeleteFolderModal } from "./delete-folder-modal";
 import { EditFolderModal } from "./edit-folder-modal";
@@ -109,6 +113,7 @@ export function AppShell({ children, folders, totalCount, activeFolderId }: AppS
   const router = useRouter();
   const storedBookmarks = useStoredBookmarks();
   const deletedBookmarks = useDeletedBookmarks();
+  const bookmarkEdits = useBookmarkEdits();
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [folderToEdit, setFolderToEdit] = useState<Folder | null>(null);
   const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
@@ -150,13 +155,18 @@ export function AppShell({ children, folders, totalCount, activeFolderId }: AppS
   ].map((folder) => ({
     ...folder,
     name: renamedFolders[folder.id] ?? folder.name,
-    count:
-      Math.max(
-        0,
-        folder.count -
-          deletedBookmarks.filter((bookmark) => bookmark.folderId === folder.id).length,
-      ) +
-      storedBookmarks.filter((bookmark) => bookmark.folderId === folder.id).length,
+    count: Math.max(
+      0,
+      folder.count -
+        deletedBookmarks.filter((bookmark) => bookmark.folderId === folder.id).length -
+        bookmarkEdits.filter(
+          (edit) => edit.originalFolderId === folder.id && edit.folderId !== folder.id,
+        ).length +
+        bookmarkEdits.filter(
+          (edit) => edit.originalFolderId !== folder.id && edit.folderId === folder.id,
+        ).length +
+        storedBookmarks.filter((bookmark) => bookmark.folderId === folder.id).length,
+    ),
   }));
 
   const handleCreateFolder = (name: string) => {

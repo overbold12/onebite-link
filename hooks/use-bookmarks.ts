@@ -5,9 +5,16 @@ import type { Bookmark } from "@/components/types";
 
 export const BOOKMARKS_STORAGE_KEY = "onebite-link.bookmarks";
 export const DELETED_BOOKMARKS_STORAGE_KEY = "onebite-link.deleted-bookmarks";
+export const BOOKMARK_EDITS_STORAGE_KEY = "onebite-link.bookmark-edits";
 export const BOOKMARKS_CHANGED_EVENT = "onebite-link:bookmarks-changed";
 
 type DeletedBookmark = Pick<Bookmark, "id" | "folderId">;
+export type BookmarkEdit = Pick<
+  Bookmark,
+  "id" | "title" | "description" | "folder" | "folderId" | "folderColor"
+> & {
+  originalFolderId: string;
+};
 
 function subscribe(onStoreChange: () => void) {
   window.addEventListener("storage", onStoreChange);
@@ -25,6 +32,10 @@ function getBookmarksSnapshot() {
 
 function getDeletedBookmarksSnapshot() {
   return window.localStorage.getItem(DELETED_BOOKMARKS_STORAGE_KEY) ?? "";
+}
+
+function getBookmarkEditsSnapshot() {
+  return window.localStorage.getItem(BOOKMARK_EDITS_STORAGE_KEY) ?? "";
 }
 
 function getServerSnapshot() {
@@ -81,6 +92,30 @@ function parseDeletedBookmarks(storedBookmarks: string): DeletedBookmark[] {
   }
 }
 
+function parseBookmarkEdits(storedEdits: string): BookmarkEdit[] {
+  if (!storedEdits) return [];
+
+  try {
+    const parsed: unknown = JSON.parse(storedEdits);
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.filter(
+      (edit): edit is BookmarkEdit =>
+        typeof edit === "object" &&
+        edit !== null &&
+        typeof edit.id === "string" &&
+        typeof edit.title === "string" &&
+        typeof edit.description === "string" &&
+        typeof edit.folder === "string" &&
+        typeof edit.folderId === "string" &&
+        typeof edit.folderColor === "string" &&
+        typeof edit.originalFolderId === "string",
+    );
+  } catch {
+    return [];
+  }
+}
+
 export function useStoredBookmarks() {
   const snapshot = useSyncExternalStore(subscribe, getBookmarksSnapshot, getServerSnapshot);
   return useMemo(() => parseStoredBookmarks(snapshot), [snapshot]);
@@ -95,6 +130,15 @@ export function useDeletedBookmarks() {
   return useMemo(() => parseDeletedBookmarks(snapshot), [snapshot]);
 }
 
+export function useBookmarkEdits() {
+  const snapshot = useSyncExternalStore(
+    subscribe,
+    getBookmarkEditsSnapshot,
+    getServerSnapshot,
+  );
+  return useMemo(() => parseBookmarkEdits(snapshot), [snapshot]);
+}
+
 export function saveBookmark(bookmark: Bookmark) {
   const current = parseStoredBookmarks(
     window.localStorage.getItem(BOOKMARKS_STORAGE_KEY) ?? "",
@@ -104,6 +148,43 @@ export function saveBookmark(bookmark: Bookmark) {
     BOOKMARKS_STORAGE_KEY,
     JSON.stringify([bookmark, ...current]),
   );
+  window.dispatchEvent(new Event(BOOKMARKS_CHANGED_EVENT));
+}
+
+export function updateBookmark(bookmark: Bookmark) {
+  const storedBookmarks = parseStoredBookmarks(
+    window.localStorage.getItem(BOOKMARKS_STORAGE_KEY) ?? "",
+  );
+  const isStoredBookmark = storedBookmarks.some((item) => item.id === bookmark.id);
+
+  if (isStoredBookmark) {
+    window.localStorage.setItem(
+      BOOKMARKS_STORAGE_KEY,
+      JSON.stringify(
+        storedBookmarks.map((item) => (item.id === bookmark.id ? bookmark : item)),
+      ),
+    );
+  } else {
+    const edits = parseBookmarkEdits(
+      window.localStorage.getItem(BOOKMARK_EDITS_STORAGE_KEY) ?? "",
+    );
+    const existingEdit = edits.find((edit) => edit.id === bookmark.id);
+    const nextEdit: BookmarkEdit = {
+      id: bookmark.id,
+      title: bookmark.title,
+      description: bookmark.description,
+      folder: bookmark.folder,
+      folderId: bookmark.folderId,
+      folderColor: bookmark.folderColor,
+      originalFolderId: existingEdit?.originalFolderId ?? bookmark.folderId,
+    };
+
+    window.localStorage.setItem(
+      BOOKMARK_EDITS_STORAGE_KEY,
+      JSON.stringify([...edits.filter((edit) => edit.id !== bookmark.id), nextEdit]),
+    );
+  }
+
   window.dispatchEvent(new Event(BOOKMARKS_CHANGED_EVENT));
 }
 
@@ -119,6 +200,10 @@ export function deleteBookmark(bookmark: Bookmark) {
       JSON.stringify(current.filter((item) => item.id !== bookmark.id)),
     );
   } else {
+    const edits = parseBookmarkEdits(
+      window.localStorage.getItem(BOOKMARK_EDITS_STORAGE_KEY) ?? "",
+    );
+    const existingEdit = edits.find((edit) => edit.id === bookmark.id);
     const deletedBookmarks = parseDeletedBookmarks(
       window.localStorage.getItem(DELETED_BOOKMARKS_STORAGE_KEY) ?? "",
     );
@@ -128,10 +213,18 @@ export function deleteBookmark(bookmark: Bookmark) {
         DELETED_BOOKMARKS_STORAGE_KEY,
         JSON.stringify([
           ...deletedBookmarks,
-          { id: bookmark.id, folderId: bookmark.folderId },
+          {
+            id: bookmark.id,
+            folderId: existingEdit?.originalFolderId ?? bookmark.folderId,
+          },
         ]),
       );
     }
+
+    window.localStorage.setItem(
+      BOOKMARK_EDITS_STORAGE_KEY,
+      JSON.stringify(edits.filter((edit) => edit.id !== bookmark.id)),
+    );
   }
 
   window.dispatchEvent(new Event(BOOKMARKS_CHANGED_EVENT));

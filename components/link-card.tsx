@@ -3,11 +3,12 @@
 import { useState } from "react";
 import type { Bookmark } from "./types";
 import type { PreviewStyle } from "./types";
-import { ArrowUpRightIcon, TrashIcon } from "./icons";
+import { ArrowUpRightIcon, PencilIcon, TrashIcon } from "./icons";
 import { LinkPreview } from "./link-preview";
 
 type LinkCardProps = {
   bookmark: Bookmark;
+  onEdit: (bookmark: Bookmark) => void;
   onDelete: (bookmark: Bookmark) => void;
 };
 
@@ -27,21 +28,32 @@ const folderDotClass: Record<string, string> = {
   inspiration: "bg-[var(--folder-inspiration)]",
 };
 
-export function LinkCard({ bookmark, onDelete }: LinkCardProps) {
+export function LinkCard({ bookmark, onEdit, onDelete }: LinkCardProps) {
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
   const showThumbnail = bookmark.thumbnail && !thumbnailFailed;
 
   return (
     <article className="link-card group relative overflow-hidden rounded-2xl bg-[var(--surface)] shadow-[var(--shadow-card)]">
-      <button
-        type="button"
-        onClick={() => onDelete(bookmark)}
-        className="link-delete-button absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--surface)] text-[var(--error)] shadow-[var(--shadow-card)]"
-        aria-label={`${bookmark.title} 링크 삭제`}
-        title="링크 삭제"
-      >
-        <TrashIcon className="h-[19px] w-[19px]" />
-      </button>
+      <div className="link-card-actions absolute right-3 top-3 z-10 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onEdit(bookmark)}
+          className="link-edit-button flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--surface)] text-[var(--accent)] shadow-[var(--shadow-card)]"
+          aria-label={`${bookmark.title} 링크 수정`}
+          title="링크 수정"
+        >
+          <PencilIcon className="h-[19px] w-[19px]" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onDelete(bookmark)}
+          className="link-delete-button flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--surface)] text-[var(--error)] shadow-[var(--shadow-card)]"
+          aria-label={`${bookmark.title} 링크 삭제`}
+          title="링크 삭제"
+        >
+          <TrashIcon className="h-[19px] w-[19px]" />
+        </button>
+      </div>
 
       <div className="h-[166px] overflow-hidden sm:h-[184px]">
         <div className="preview-art h-full">

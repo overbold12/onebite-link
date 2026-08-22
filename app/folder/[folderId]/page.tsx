@@ -32,12 +32,11 @@ export default async function FolderPage({ params }: FolderPageProps) {
 
   if (!folder) notFound();
 
-  const folderBookmarks = bookmarks.filter((bookmark) => bookmark.folderId === folder.id);
-
   return (
     <AppShell folders={folders} totalCount={bookmarks.length} activeFolderId={folder.id}>
       <LinkGrid
-        bookmarks={folderBookmarks}
+        bookmarks={bookmarks}
+        folders={folders}
         title={folder.name}
         eyebrow="Folder collection"
         description={`${folder.name} 폴더에 저장된 링크를 모아봤어요.`}
