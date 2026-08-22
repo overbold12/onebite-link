@@ -5,12 +5,14 @@ import { useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { AppHeader } from "./app-header";
 import { DeleteFolderModal } from "./delete-folder-modal";
+import { EditFolderModal } from "./edit-folder-modal";
 import { NewFolderModal } from "./new-folder-modal";
 import { Sidebar } from "./sidebar";
 import type { Folder } from "./types";
 
 const CUSTOM_FOLDERS_STORAGE_KEY = "onebite-link.custom-folders";
 const DELETED_FOLDERS_STORAGE_KEY = "onebite-link.deleted-folders";
+const RENAMED_FOLDERS_STORAGE_KEY = "onebite-link.renamed-folders";
 const CUSTOM_FOLDERS_EVENT = "onebite-link:folders-changed";
 
 function subscribeToCustomFolders(onStoreChange: () => void) {
@@ -33,6 +35,10 @@ function getCustomFoldersServerSnapshot() {
 
 function getDeletedFoldersSnapshot() {
   return window.localStorage.getItem(DELETED_FOLDERS_STORAGE_KEY) ?? "";
+}
+
+function getRenamedFoldersSnapshot() {
+  return window.localStorage.getItem(RENAMED_FOLDERS_STORAGE_KEY) ?? "";
 }
 
 function parseCustomFolders(storedFolders: string): Folder[] {
@@ -71,6 +77,26 @@ function parseDeletedFolderIds(storedFolderIds: string): string[] {
   }
 }
 
+function parseRenamedFolders(storedFolders: string): Record<string, string> {
+  if (!storedFolders) return {};
+
+  try {
+    const parsedFolders: unknown = JSON.parse(storedFolders);
+
+    if (typeof parsedFolders !== "object" || parsedFolders === null || Array.isArray(parsedFolders)) {
+      return {};
+    }
+
+    return Object.fromEntries(
+      Object.entries(parsedFolders).filter(
+        (entry): entry is [string, string] => typeof entry[1] === "string",
+      ),
+    );
+  } catch {
+    return {};
+  }
+}
+
 type AppShellProps = {
   children: ReactNode;
   folders: Folder[];
@@ -81,6 +107,7 @@ type AppShellProps = {
 export function AppShell({ children, folders, totalCount, activeFolderId }: AppShellProps) {
   const router = useRouter();
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
+  const [folderToEdit, setFolderToEdit] = useState<Folder | null>(null);
   const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
   const customFoldersSnapshot = useSyncExternalStore(
     subscribeToCustomFolders,
@@ -100,6 +127,15 @@ export function AppShell({ children, folders, totalCount, activeFolderId }: AppS
     () => parseDeletedFolderIds(deletedFoldersSnapshot),
     [deletedFoldersSnapshot],
   );
+  const renamedFoldersSnapshot = useSyncExternalStore(
+    subscribeToCustomFolders,
+    getRenamedFoldersSnapshot,
+    getCustomFoldersServerSnapshot,
+  );
+  const renamedFolders = useMemo(
+    () => parseRenamedFolders(renamedFoldersSnapshot),
+    [renamedFoldersSnapshot],
+  );
 
   const allFolders = [
     ...folders.filter((folder) => !deletedFolderIds.includes(folder.id)),
@@ -108,7 +144,10 @@ export function AppShell({ children, folders, totalCount, activeFolderId }: AppS
         !folders.some((folder) => folder.id === customFolder.id) &&
         !deletedFolderIds.includes(customFolder.id),
     ),
-  ];
+  ].map((folder) => ({
+    ...folder,
+    name: renamedFolders[folder.id] ?? folder.name,
+  }));
 
   const handleCreateFolder = (name: string) => {
     const newFolder: Folder = {
@@ -144,6 +183,25 @@ export function AppShell({ children, folders, totalCount, activeFolderId }: AppS
     if (activeFolderId === folder.id) router.replace("/");
   };
 
+  const handleEditFolder = (folder: Folder, name: string) => {
+    const isCustomFolder = customFolders.some((customFolder) => customFolder.id === folder.id);
+
+    if (isCustomFolder) {
+      const nextFolders = customFolders.map((customFolder) =>
+        customFolder.id === folder.id ? { ...customFolder, name } : customFolder,
+      );
+      window.localStorage.setItem(CUSTOM_FOLDERS_STORAGE_KEY, JSON.stringify(nextFolders));
+    } else {
+      window.localStorage.setItem(
+        RENAMED_FOLDERS_STORAGE_KEY,
+        JSON.stringify({ ...renamedFolders, [folder.id]: name }),
+      );
+    }
+
+    window.dispatchEvent(new Event(CUSTOM_FOLDERS_EVENT));
+    setFolderToEdit(null);
+  };
+
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--text)]">
       <AppHeader onNewFolder={() => setIsFolderModalOpen(true)} />
@@ -153,6 +211,7 @@ export function AppShell({ children, folders, totalCount, activeFolderId }: AppS
           totalCount={totalCount}
           activeFolderId={activeFolderId}
           onNewFolder={() => setIsFolderModalOpen(true)}
+          onEditFolder={setFolderToEdit}
           onDeleteFolder={setFolderToDelete}
         />
         <main className="min-w-0 flex-1 px-5 pb-16 pt-8 sm:px-7 md:px-8 lg:px-12 lg:pb-20 lg:pt-12">
@@ -170,6 +229,17 @@ export function AppShell({ children, folders, totalCount, activeFolderId }: AppS
         onClose={() => setFolderToDelete(null)}
         onConfirm={handleDeleteFolder}
       />
+      {folderToEdit ? (
+        <EditFolderModal
+          key={folderToEdit.id}
+          folder={folderToEdit}
+          existingFolderNames={allFolders
+            .filter((folder) => folder.id !== folderToEdit.id)
+            .map((folder) => folder.name)}
+          onClose={() => setFolderToEdit(null)}
+          onSave={handleEditFolder}
+        />
+      ) : null}
     </div>
   );
 }

@@ -1,12 +1,13 @@
 import Link from "next/link";
 import type { Folder } from "./types";
-import { FolderIcon, GridIcon, PlusIcon, TrashIcon } from "./icons";
+import { FolderIcon, GridIcon, PencilIcon, PlusIcon, TrashIcon } from "./icons";
 
 type SidebarProps = {
   folders: Folder[];
   totalCount: number;
   activeFolderId?: string | null;
   onNewFolder: () => void;
+  onEditFolder: (folder: Folder) => void;
   onDeleteFolder: (folder: Folder) => void;
 };
 
@@ -22,6 +23,7 @@ export function Sidebar({
   totalCount,
   activeFolderId,
   onNewFolder,
+  onEditFolder,
   onDeleteFolder,
 }: SidebarProps) {
   return (
@@ -60,7 +62,7 @@ export function Sidebar({
             <div key={folder.id} className="folder-row relative shrink-0 md:w-full">
               <Link
                 href={`/folder/${folder.id}`}
-                className={`nav-item flex h-11 items-center gap-2.5 rounded-xl px-3 pr-11 text-[14px] font-medium ${
+                className={`nav-item flex h-11 items-center gap-2.5 rounded-xl px-3 pr-[76px] text-[14px] font-medium ${
                   activeFolderId === folder.id
                     ? "nav-item-active bg-[var(--surface-accent)] font-bold text-[var(--accent-hover)]"
                     : "text-[var(--text-sub)]"
@@ -73,15 +75,26 @@ export function Sidebar({
                   {folder.count}
                 </span>
               </Link>
-              <button
-                type="button"
-                onClick={() => onDeleteFolder(folder)}
-                className="folder-delete-button absolute right-1.5 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--text-muted)]"
-                aria-label={`${folder.name} 폴더 삭제`}
-                title="폴더 삭제"
-              >
-                <TrashIcon className="h-[17px] w-[17px]" />
-              </button>
+              <div className="folder-actions absolute right-1 top-1/2 z-10 flex -translate-y-1/2 items-center gap-0.5">
+                <button
+                  type="button"
+                  onClick={() => onEditFolder(folder)}
+                  className="folder-edit-button flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)]"
+                  aria-label={`${folder.name} 폴더 수정`}
+                  title="폴더 수정"
+                >
+                  <PencilIcon className="h-[17px] w-[17px]" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDeleteFolder(folder)}
+                  className="folder-delete-button flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)]"
+                  aria-label={`${folder.name} 폴더 삭제`}
+                  title="폴더 삭제"
+                >
+                  <TrashIcon className="h-[17px] w-[17px]" />
+                </button>
+              </div>
             </div>
           ))}
         </div>
