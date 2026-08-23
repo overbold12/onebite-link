@@ -1,13 +1,14 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import {
   useBookmarkEdits,
   useDeletedBookmarks,
   useStoredBookmarks,
 } from "@/hooks/use-bookmarks";
+import { createClient } from "@/utils/supabase/client";
 import { AppHeader } from "./app-header";
 import { DeleteFolderModal } from "./delete-folder-modal";
 import { EditFolderModal } from "./edit-folder-modal";
@@ -15,7 +16,6 @@ import { NewFolderModal } from "./new-folder-modal";
 import { Sidebar } from "./sidebar";
 import type { Folder } from "./types";
 
-const CUSTOM_FOLDERS_STORAGE_KEY = "onebite-link.custom-folders";
 const DELETED_FOLDERS_STORAGE_KEY = "onebite-link.deleted-folders";
 const RENAMED_FOLDERS_STORAGE_KEY = "onebite-link.renamed-folders";
 const CUSTOM_FOLDERS_EVENT = "onebite-link:folders-changed";
@@ -30,10 +30,6 @@ function subscribeToCustomFolders(onStoreChange: () => void) {
   };
 }
 
-function getCustomFoldersSnapshot() {
-  return window.localStorage.getItem(CUSTOM_FOLDERS_STORAGE_KEY) ?? "";
-}
-
 function getCustomFoldersServerSnapshot() {
   return "";
 }
@@ -44,28 +40,6 @@ function getDeletedFoldersSnapshot() {
 
 function getRenamedFoldersSnapshot() {
   return window.localStorage.getItem(RENAMED_FOLDERS_STORAGE_KEY) ?? "";
-}
-
-function parseCustomFolders(storedFolders: string): Folder[] {
-  if (!storedFolders) return [];
-
-  try {
-    const parsedFolders: unknown = JSON.parse(storedFolders);
-
-    if (!Array.isArray(parsedFolders)) return [];
-
-    return parsedFolders.filter(
-      (folder): folder is Folder =>
-        typeof folder === "object" &&
-        folder !== null &&
-        typeof folder.id === "string" &&
-        typeof folder.name === "string" &&
-        typeof folder.count === "number" &&
-        typeof folder.color === "string",
-    );
-  } catch {
-    return [];
-  }
 }
 
 function parseDeletedFolderIds(storedFolderIds: string): string[] {
@@ -104,28 +78,20 @@ function parseRenamedFolders(storedFolders: string): Record<string, string> {
 
 type AppShellProps = {
   children: ReactNode;
-  folders: Folder[];
   totalCount: number;
   activeFolderId?: string | null;
 };
 
-export function AppShell({ children, folders, totalCount, activeFolderId }: AppShellProps) {
+export function AppShell({ children, totalCount, activeFolderId }: AppShellProps) {
   const router = useRouter();
+  const supabase = useMemo(() => createClient(), []);
   const storedBookmarks = useStoredBookmarks();
   const deletedBookmarks = useDeletedBookmarks();
   const bookmarkEdits = useBookmarkEdits();
+  const [databaseFolders, setDatabaseFolders] = useState<Folder[]>([]);
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [folderToEdit, setFolderToEdit] = useState<Folder | null>(null);
   const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
-  const customFoldersSnapshot = useSyncExternalStore(
-    subscribeToCustomFolders,
-    getCustomFoldersSnapshot,
-    getCustomFoldersServerSnapshot,
-  );
-  const customFolders = useMemo(
-    () => parseCustomFolders(customFoldersSnapshot),
-    [customFoldersSnapshot],
-  );
   const deletedFoldersSnapshot = useSyncExternalStore(
     subscribeToCustomFolders,
     getDeletedFoldersSnapshot,
@@ -145,57 +111,86 @@ export function AppShell({ children, folders, totalCount, activeFolderId }: AppS
     [renamedFoldersSnapshot],
   );
 
-  const allFolders = [
-    ...folders.filter((folder) => !deletedFolderIds.includes(folder.id)),
-    ...customFolders.filter(
-      (customFolder) =>
-        !folders.some((folder) => folder.id === customFolder.id) &&
-        !deletedFolderIds.includes(customFolder.id),
-    ),
-  ].map((folder) => ({
-    ...folder,
-    name: renamedFolders[folder.id] ?? folder.name,
-    count: Math.max(
-      0,
-      folder.count -
-        deletedBookmarks.filter((bookmark) => bookmark.folderId === folder.id).length -
-        bookmarkEdits.filter(
-          (edit) => edit.originalFolderId === folder.id && edit.folderId !== folder.id,
-        ).length +
-        bookmarkEdits.filter(
-          (edit) => edit.originalFolderId !== folder.id && edit.folderId === folder.id,
-        ).length +
-        storedBookmarks.filter((bookmark) => bookmark.folderId === folder.id).length,
-    ),
-  }));
+  useEffect(() => {
+    let isCancelled = false;
 
-  const handleCreateFolder = (name: string) => {
-    const newFolder: Folder = {
-      id: `custom-${crypto.randomUUID()}`,
-      name,
-      count: 0,
-      color: "#3182f6",
+    async function loadFolders() {
+      const { data, error } = await supabase
+        .from("folders")
+        .select("id, name, created_at")
+        .order("created_at", { ascending: true })
+        .order("id", { ascending: true });
+
+      if (error) {
+        console.error("Failed to load folders", error);
+        return;
+      }
+
+      if (!isCancelled) {
+        setDatabaseFolders(
+          data.map((folder) => ({
+            id: String(folder.id),
+            name: folder.name,
+            count: 0,
+            color: "#3182f6",
+          })),
+        );
+      }
+    }
+
+    void loadFolders();
+
+    return () => {
+      isCancelled = true;
     };
+  }, [supabase]);
 
-    const nextFolders = [...customFolders, newFolder];
-    window.localStorage.setItem(CUSTOM_FOLDERS_STORAGE_KEY, JSON.stringify(nextFolders));
-    window.dispatchEvent(new Event(CUSTOM_FOLDERS_EVENT));
+  const allFolders = databaseFolders
+    .filter((folder) => !deletedFolderIds.includes(folder.id))
+    .map((folder) => ({
+      ...folder,
+      name: renamedFolders[folder.id] ?? folder.name,
+      count: Math.max(
+        0,
+        folder.count -
+          deletedBookmarks.filter((bookmark) => bookmark.folderId === folder.id).length -
+          bookmarkEdits.filter(
+            (edit) => edit.originalFolderId === folder.id && edit.folderId !== folder.id,
+          ).length +
+          bookmarkEdits.filter(
+            (edit) => edit.originalFolderId !== folder.id && edit.folderId === folder.id,
+          ).length +
+          storedBookmarks.filter((bookmark) => bookmark.folderId === folder.id).length,
+      ),
+    }));
+
+  const handleCreateFolder = async (name: string) => {
+    const { data, error } = await supabase
+      .from("folders")
+      .insert({ name })
+      .select("id, name, created_at")
+      .single();
+
+    if (error) throw error;
+
+    setDatabaseFolders((currentFolders) => [
+      ...currentFolders,
+      {
+        id: String(data.id),
+        name: data.name,
+        count: 0,
+        color: "#3182f6",
+      },
+    ]);
     setIsFolderModalOpen(false);
   };
 
   const handleDeleteFolder = (folder: Folder) => {
-    const isCustomFolder = customFolders.some((customFolder) => customFolder.id === folder.id);
-
-    if (isCustomFolder) {
-      const nextFolders = customFolders.filter((customFolder) => customFolder.id !== folder.id);
-      window.localStorage.setItem(CUSTOM_FOLDERS_STORAGE_KEY, JSON.stringify(nextFolders));
-    } else {
-      const nextDeletedFolderIds = [...new Set([...deletedFolderIds, folder.id])];
-      window.localStorage.setItem(
-        DELETED_FOLDERS_STORAGE_KEY,
-        JSON.stringify(nextDeletedFolderIds),
-      );
-    }
+    const nextDeletedFolderIds = [...new Set([...deletedFolderIds, folder.id])];
+    window.localStorage.setItem(
+      DELETED_FOLDERS_STORAGE_KEY,
+      JSON.stringify(nextDeletedFolderIds),
+    );
 
     window.dispatchEvent(new Event(CUSTOM_FOLDERS_EVENT));
     setFolderToDelete(null);
@@ -204,19 +199,10 @@ export function AppShell({ children, folders, totalCount, activeFolderId }: AppS
   };
 
   const handleEditFolder = (folder: Folder, name: string) => {
-    const isCustomFolder = customFolders.some((customFolder) => customFolder.id === folder.id);
-
-    if (isCustomFolder) {
-      const nextFolders = customFolders.map((customFolder) =>
-        customFolder.id === folder.id ? { ...customFolder, name } : customFolder,
-      );
-      window.localStorage.setItem(CUSTOM_FOLDERS_STORAGE_KEY, JSON.stringify(nextFolders));
-    } else {
-      window.localStorage.setItem(
-        RENAMED_FOLDERS_STORAGE_KEY,
-        JSON.stringify({ ...renamedFolders, [folder.id]: name }),
-      );
-    }
+    window.localStorage.setItem(
+      RENAMED_FOLDERS_STORAGE_KEY,
+      JSON.stringify({ ...renamedFolders, [folder.id]: name }),
+    );
 
     window.dispatchEvent(new Event(CUSTOM_FOLDERS_EVENT));
     setFolderToEdit(null);

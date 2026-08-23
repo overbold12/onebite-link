@@ -33,7 +33,7 @@ export default async function FolderPage({ params }: FolderPageProps) {
   if (!folder) notFound();
 
   return (
-    <AppShell folders={folders} totalCount={bookmarks.length} activeFolderId={folder.id}>
+    <AppShell totalCount={bookmarks.length} activeFolderId={folder.id}>
       <LinkGrid
         bookmarks={bookmarks}
         folders={folders}

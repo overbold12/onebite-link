@@ -7,7 +7,7 @@ type NewFolderModalProps = {
   isOpen: boolean;
   existingFolderNames: string[];
   onClose: () => void;
-  onSave: (name: string) => void;
+  onSave: (name: string) => Promise<void>;
 };
 
 export function NewFolderModal({
@@ -17,7 +17,10 @@ export function NewFolderModal({
   onSave,
 }: NewFolderModalProps) {
   const [folderName, setFolderName] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const submitLockRef = useRef(false);
   const normalizedName = folderName.trim();
   const isDuplicate = existingFolderNames.some(
     (name) => name.toLocaleLowerCase() === normalizedName.toLocaleLowerCase(),
@@ -46,16 +49,28 @@ export function NewFolderModal({
 
   const handleClose = () => {
     setFolderName("");
+    setSaveError(null);
     onClose();
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!normalizedName || isDuplicate) return;
+    if (!normalizedName || isDuplicate || submitLockRef.current) return;
 
-    onSave(normalizedName);
-    setFolderName("");
+    submitLockRef.current = true;
+    setIsSubmitting(true);
+    setSaveError(null);
+
+    try {
+      await onSave(normalizedName);
+      setFolderName("");
+    } catch {
+      setSaveError("폴더를 저장하지 못했어요. 다시 시도해 주세요.");
+    } finally {
+      submitLockRef.current = false;
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -99,13 +114,15 @@ export function NewFolderModal({
             autoComplete="off"
             placeholder="예: 나중에 읽을 글"
             aria-invalid={isDuplicate}
-            aria-describedby={isDuplicate ? "folder-name-error" : undefined}
+            aria-describedby={
+              isDuplicate || saveError ? "folder-name-error" : undefined
+            }
             className="mt-2.5 h-[52px] w-full rounded-xl border-0 bg-[var(--surface-subtle)] px-4 text-[15px] text-[var(--text)] outline-none placeholder:text-[var(--text-placeholder)] focus:bg-[var(--surface)] focus:ring-3 focus:ring-[var(--focus)] aria-invalid:ring-2 aria-invalid:ring-[var(--error)]"
           />
           <div className="mt-2 flex min-h-5 items-start justify-between gap-3 text-[12px]">
-            {isDuplicate ? (
+            {isDuplicate || saveError ? (
               <p id="folder-name-error" className="text-[var(--error)]">
-                이미 같은 이름의 폴더가 있어요.
+                {isDuplicate ? "이미 같은 이름의 폴더가 있어요." : saveError}
               </p>
             ) : (
               <span />
@@ -123,10 +140,10 @@ export function NewFolderModal({
             </button>
             <button
               type="submit"
-              disabled={!normalizedName || isDuplicate}
+              disabled={!normalizedName || isDuplicate || isSubmitting}
               className="primary-button h-12 rounded-xl bg-[var(--accent)] px-6 text-[15px] font-bold text-white shadow-[var(--shadow-button)] disabled:cursor-not-allowed disabled:bg-[var(--disabled)] disabled:text-[var(--text-muted)] disabled:shadow-none"
             >
-              저장
+              {isSubmitting ? "저장 중..." : "저장"}
             </button>
           </div>
         </form>

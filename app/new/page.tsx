@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function NewLinkPage() {
   return (
-    <AppShell folders={folders} totalCount={bookmarks.length}>
+    <AppShell totalCount={bookmarks.length}>
       <section aria-labelledby="new-link-title">
         <p className="inline-flex rounded-lg bg-[var(--surface-accent)] px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--accent-hover)]">Add bookmark</p>
         <h1 id="new-link-title" className="mt-3 text-[28px] font-extrabold tracking-[-0.04em] text-[var(--text)] sm:text-[32px]">
