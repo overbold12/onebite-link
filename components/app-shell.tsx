@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  useBookmarkEdits,
+  BOOKMARKS_CHANGED_EVENT,
   useDeletedBookmarks,
   useStoredBookmarks,
 } from "@/hooks/use-bookmarks";
@@ -27,7 +27,6 @@ export function AppShell({ children, totalCount, activeFolderId }: AppShellProps
   const supabase = useMemo(() => createClient(), []);
   const storedBookmarks = useStoredBookmarks();
   const deletedBookmarks = useDeletedBookmarks();
-  const bookmarkEdits = useBookmarkEdits();
   const [databaseFolders, setDatabaseFolders] = useState<Folder[]>([]);
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [folderToEdit, setFolderToEdit] = useState<Folder | null>(null);
@@ -36,23 +35,43 @@ export function AppShell({ children, totalCount, activeFolderId }: AppShellProps
     let isCancelled = false;
 
     async function loadFolders() {
-      const { data, error } = await supabase
-        .from("folders")
-        .select("id, name, created_at")
-        .order("created_at", { ascending: true })
-        .order("id", { ascending: true });
+      const [foldersResult, linksResult] = await Promise.all([
+        supabase
+          .from("folders")
+          .select("id, name, created_at")
+          .order("created_at", { ascending: true })
+          .order("id", { ascending: true }),
+        supabase.from("links").select("folder_id"),
+      ]);
 
-      if (error) {
-        console.error("Failed to load folders", error);
+      if (foldersResult.error) {
+        console.error("Failed to load folders", foldersResult.error);
+        return;
+      }
+
+      if (linksResult.error) {
+        console.error("Failed to load folder link counts", linksResult.error);
         return;
       }
 
       if (!isCancelled) {
+        const linkCountByFolderId = new Map<string, number>();
+
+        for (const link of linksResult.data) {
+          if (link.folder_id === null) continue;
+
+          const folderId = String(link.folder_id);
+          linkCountByFolderId.set(
+            folderId,
+            (linkCountByFolderId.get(folderId) ?? 0) + 1,
+          );
+        }
+
         setDatabaseFolders(
-          data.map((folder) => ({
+          foldersResult.data.map((folder) => ({
             id: String(folder.id),
             name: folder.name,
-            count: 0,
+            count: linkCountByFolderId.get(String(folder.id)) ?? 0,
             color: "#3182f6",
           })),
         );
@@ -60,27 +79,15 @@ export function AppShell({ children, totalCount, activeFolderId }: AppShellProps
     }
 
     void loadFolders();
+    window.addEventListener(BOOKMARKS_CHANGED_EVENT, loadFolders);
 
     return () => {
       isCancelled = true;
+      window.removeEventListener(BOOKMARKS_CHANGED_EVENT, loadFolders);
     };
   }, [supabase]);
 
-  const allFolders = databaseFolders.map((folder) => ({
-    ...folder,
-    count: Math.max(
-      0,
-      folder.count -
-        deletedBookmarks.filter((bookmark) => bookmark.folderId === folder.id).length -
-        bookmarkEdits.filter(
-          (edit) => edit.originalFolderId === folder.id && edit.folderId !== folder.id,
-        ).length +
-        bookmarkEdits.filter(
-          (edit) => edit.originalFolderId !== folder.id && edit.folderId === folder.id,
-        ).length +
-        storedBookmarks.filter((bookmark) => bookmark.folderId === folder.id).length,
-    ),
-  }));
+  const allFolders = databaseFolders;
 
   const handleCreateFolder = async (name: string) => {
     const { data, error } = await supabase

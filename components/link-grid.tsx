@@ -52,7 +52,21 @@ export function LinkGrid({
     .filter((bookmark) => !folderId || bookmark.folderId === folderId);
   const allBookmarks = [...visibleStoredBookmarks, ...visibleInitialBookmarks];
 
-  const handleConfirmDelete = (bookmark: Bookmark) => {
+  const handleConfirmDelete = async (bookmark: Bookmark) => {
+    const { data, error } = await supabase
+      .from("links")
+      .delete()
+      .eq("id", bookmark.id)
+      .select("id")
+      .single();
+
+    if (error) {
+      console.error("Failed to delete link", error);
+      return;
+    }
+
+    if (String(data.id) !== bookmark.id) return;
+
     deleteBookmark(bookmark);
     setBookmarkToDelete(null);
   };
