@@ -1,11 +1,14 @@
-import { AppShell } from "@/components/app-shell";
-import { LinkGrid } from "@/components/link-grid";
-import { bookmarks, folders } from "@/data/bookmarks";
+import { createClient } from "@/utils/supabase/server";
 
-export default function Home() {
+export default async function Page() {
+  const supabase = await createClient();
+  const { data: todos } = await supabase.from("todos").select();
+
   return (
-    <AppShell folders={folders} totalCount={bookmarks.length} activeFolderId={null}>
-      <LinkGrid bookmarks={bookmarks} folders={folders} />
-    </AppShell>
+    <ul>
+      {todos?.map((todo) => (
+        <li key={todo.id}>{todo.name}</li>
+      ))}
+    </ul>
   );
 }
