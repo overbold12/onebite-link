@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   useBookmarkEdits,
@@ -15,41 +15,6 @@ import { EditFolderModal } from "./edit-folder-modal";
 import { NewFolderModal } from "./new-folder-modal";
 import { Sidebar } from "./sidebar";
 import type { Folder } from "./types";
-
-const DELETED_FOLDERS_STORAGE_KEY = "onebite-link.deleted-folders";
-const CUSTOM_FOLDERS_EVENT = "onebite-link:folders-changed";
-
-function subscribeToCustomFolders(onStoreChange: () => void) {
-  window.addEventListener("storage", onStoreChange);
-  window.addEventListener(CUSTOM_FOLDERS_EVENT, onStoreChange);
-
-  return () => {
-    window.removeEventListener("storage", onStoreChange);
-    window.removeEventListener(CUSTOM_FOLDERS_EVENT, onStoreChange);
-  };
-}
-
-function getCustomFoldersServerSnapshot() {
-  return "";
-}
-
-function getDeletedFoldersSnapshot() {
-  return window.localStorage.getItem(DELETED_FOLDERS_STORAGE_KEY) ?? "";
-}
-
-function parseDeletedFolderIds(storedFolderIds: string): string[] {
-  if (!storedFolderIds) return [];
-
-  try {
-    const parsedFolderIds: unknown = JSON.parse(storedFolderIds);
-
-    if (!Array.isArray(parsedFolderIds)) return [];
-
-    return parsedFolderIds.filter((folderId): folderId is string => typeof folderId === "string");
-  } catch {
-    return [];
-  }
-}
 
 type AppShellProps = {
   children: ReactNode;
@@ -67,15 +32,6 @@ export function AppShell({ children, totalCount, activeFolderId }: AppShellProps
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [folderToEdit, setFolderToEdit] = useState<Folder | null>(null);
   const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
-  const deletedFoldersSnapshot = useSyncExternalStore(
-    subscribeToCustomFolders,
-    getDeletedFoldersSnapshot,
-    getCustomFoldersServerSnapshot,
-  );
-  const deletedFolderIds = useMemo(
-    () => parseDeletedFolderIds(deletedFoldersSnapshot),
-    [deletedFoldersSnapshot],
-  );
   useEffect(() => {
     let isCancelled = false;
 
@@ -110,23 +66,21 @@ export function AppShell({ children, totalCount, activeFolderId }: AppShellProps
     };
   }, [supabase]);
 
-  const allFolders = databaseFolders
-    .filter((folder) => !deletedFolderIds.includes(folder.id))
-    .map((folder) => ({
-      ...folder,
-      count: Math.max(
-        0,
-        folder.count -
-          deletedBookmarks.filter((bookmark) => bookmark.folderId === folder.id).length -
-          bookmarkEdits.filter(
-            (edit) => edit.originalFolderId === folder.id && edit.folderId !== folder.id,
-          ).length +
-          bookmarkEdits.filter(
-            (edit) => edit.originalFolderId !== folder.id && edit.folderId === folder.id,
-          ).length +
-          storedBookmarks.filter((bookmark) => bookmark.folderId === folder.id).length,
-      ),
-    }));
+  const allFolders = databaseFolders.map((folder) => ({
+    ...folder,
+    count: Math.max(
+      0,
+      folder.count -
+        deletedBookmarks.filter((bookmark) => bookmark.folderId === folder.id).length -
+        bookmarkEdits.filter(
+          (edit) => edit.originalFolderId === folder.id && edit.folderId !== folder.id,
+        ).length +
+        bookmarkEdits.filter(
+          (edit) => edit.originalFolderId !== folder.id && edit.folderId === folder.id,
+        ).length +
+        storedBookmarks.filter((bookmark) => bookmark.folderId === folder.id).length,
+    ),
+  }));
 
   const handleCreateFolder = async (name: string) => {
     const { data, error } = await supabase
@@ -149,14 +103,22 @@ export function AppShell({ children, totalCount, activeFolderId }: AppShellProps
     setIsFolderModalOpen(false);
   };
 
-  const handleDeleteFolder = (folder: Folder) => {
-    const nextDeletedFolderIds = [...new Set([...deletedFolderIds, folder.id])];
-    window.localStorage.setItem(
-      DELETED_FOLDERS_STORAGE_KEY,
-      JSON.stringify(nextDeletedFolderIds),
-    );
+  const handleDeleteFolder = async (folder: Folder) => {
+    const { data, error } = await supabase
+      .from("folders")
+      .delete()
+      .eq("id", folder.id)
+      .select("id")
+      .single();
 
-    window.dispatchEvent(new Event(CUSTOM_FOLDERS_EVENT));
+    if (error) {
+      console.error("Failed to delete folder", error);
+      return;
+    }
+
+    setDatabaseFolders((currentFolders) =>
+      currentFolders.filter((currentFolder) => currentFolder.id !== String(data.id)),
+    );
     setFolderToDelete(null);
 
     if (activeFolderId === folder.id) router.replace("/");
