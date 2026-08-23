@@ -2,20 +2,15 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { LinkGrid } from "@/components/link-grid";
-import { bookmarks, folders } from "@/data/bookmarks";
+import { getFoldersAndLinks } from "@/data/database";
 
 type FolderPageProps = {
   params: Promise<{ folderId: string }>;
 };
 
-export const dynamicParams = false;
-
-export function generateStaticParams() {
-  return folders.map((folder) => ({ folderId: folder.id }));
-}
-
 export async function generateMetadata({ params }: FolderPageProps): Promise<Metadata> {
   const { folderId } = await params;
+  const { folders } = await getFoldersAndLinks();
   const folder = folders.find((item) => item.id === folderId);
 
   if (!folder) return {};
@@ -28,6 +23,7 @@ export async function generateMetadata({ params }: FolderPageProps): Promise<Met
 
 export default async function FolderPage({ params }: FolderPageProps) {
   const { folderId } = await params;
+  const { bookmarks, folders } = await getFoldersAndLinks();
   const folder = folders.find((item) => item.id === folderId);
 
   if (!folder) notFound();

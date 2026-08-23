@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useMemo, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { saveBookmark } from "@/hooks/use-bookmarks";
+import { createClient } from "@/utils/supabase/client";
 import { ChevronDownIcon, LinkIcon } from "./icons";
 import type { Folder, OpenGraphData } from "./types";
 
@@ -12,11 +12,16 @@ type NewLinkFormProps = {
 
 export function NewLinkForm({ folders }: NewLinkFormProps) {
   const router = useRouter();
+  const supabase = useMemo(() => createClient(), []);
+  const submitLockRef = useRef(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (submitLockRef.current) return;
+
+    submitLockRef.current = true;
     setError("");
     setIsSaving(true);
 
@@ -28,6 +33,7 @@ export function NewLinkForm({ folders }: NewLinkFormProps) {
 
     if (!folder) {
       setError("저장할 폴더를 선택해 주세요.");
+      submitLockRef.current = false;
       setIsSaving(false);
       return;
     }
@@ -53,27 +59,31 @@ export function NewLinkForm({ folders }: NewLinkFormProps) {
 
       const openGraph = payload as OpenGraphData;
 
-      saveBookmark({
-        id: crypto.randomUUID(),
-        url: openGraph.url,
-        title: openGraph.title,
-        description: openGraph.description,
-        domain: openGraph.domain,
-        thumbnail: openGraph.thumbnail,
-        folder: folder.name,
-        folderId: folder.id,
-        folderColor: folder.color,
-        icon: (openGraph.title || openGraph.domain).slice(0, 1).toUpperCase(),
-        iconColor: "#3182f6",
-      });
+      const { error: insertError } = await supabase
+        .from("links")
+        .insert({
+          url: openGraph.url,
+          title: openGraph.title,
+          description: openGraph.description,
+          thumbnail_url: openGraph.thumbnail,
+          folder_id: folder.id,
+        })
+        .select("id")
+        .single();
+
+      if (insertError) {
+        throw new Error("링크를 저장하지 못했어요. 잠시 후 다시 시도해 주세요.");
+      }
 
       router.push("/");
+      router.refresh();
     } catch (caughtError) {
       setError(
         caughtError instanceof Error
           ? caughtError.message
           : "링크를 저장하지 못했어요. 잠시 후 다시 시도해 주세요.",
       );
+      submitLockRef.current = false;
       setIsSaving(false);
     }
   };
@@ -116,6 +126,7 @@ export function NewLinkForm({ folders }: NewLinkFormProps) {
             name="folder"
             required
             defaultValue=""
+            disabled={isSaving}
             className="h-[54px] w-full appearance-none rounded-xl border-0 bg-[var(--surface-subtle)] px-4 pr-11 text-[15px] text-[var(--text)] outline-none focus:bg-[var(--surface)] focus:ring-3 focus:ring-[var(--focus)]"
           >
             <option value="" disabled>폴더를 선택해 주세요</option>
