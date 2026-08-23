@@ -17,7 +17,6 @@ import { Sidebar } from "./sidebar";
 import type { Folder } from "./types";
 
 const DELETED_FOLDERS_STORAGE_KEY = "onebite-link.deleted-folders";
-const RENAMED_FOLDERS_STORAGE_KEY = "onebite-link.renamed-folders";
 const CUSTOM_FOLDERS_EVENT = "onebite-link:folders-changed";
 
 function subscribeToCustomFolders(onStoreChange: () => void) {
@@ -38,10 +37,6 @@ function getDeletedFoldersSnapshot() {
   return window.localStorage.getItem(DELETED_FOLDERS_STORAGE_KEY) ?? "";
 }
 
-function getRenamedFoldersSnapshot() {
-  return window.localStorage.getItem(RENAMED_FOLDERS_STORAGE_KEY) ?? "";
-}
-
 function parseDeletedFolderIds(storedFolderIds: string): string[] {
   if (!storedFolderIds) return [];
 
@@ -53,26 +48,6 @@ function parseDeletedFolderIds(storedFolderIds: string): string[] {
     return parsedFolderIds.filter((folderId): folderId is string => typeof folderId === "string");
   } catch {
     return [];
-  }
-}
-
-function parseRenamedFolders(storedFolders: string): Record<string, string> {
-  if (!storedFolders) return {};
-
-  try {
-    const parsedFolders: unknown = JSON.parse(storedFolders);
-
-    if (typeof parsedFolders !== "object" || parsedFolders === null || Array.isArray(parsedFolders)) {
-      return {};
-    }
-
-    return Object.fromEntries(
-      Object.entries(parsedFolders).filter(
-        (entry): entry is [string, string] => typeof entry[1] === "string",
-      ),
-    );
-  } catch {
-    return {};
   }
 }
 
@@ -101,16 +76,6 @@ export function AppShell({ children, totalCount, activeFolderId }: AppShellProps
     () => parseDeletedFolderIds(deletedFoldersSnapshot),
     [deletedFoldersSnapshot],
   );
-  const renamedFoldersSnapshot = useSyncExternalStore(
-    subscribeToCustomFolders,
-    getRenamedFoldersSnapshot,
-    getCustomFoldersServerSnapshot,
-  );
-  const renamedFolders = useMemo(
-    () => parseRenamedFolders(renamedFoldersSnapshot),
-    [renamedFoldersSnapshot],
-  );
-
   useEffect(() => {
     let isCancelled = false;
 
@@ -149,7 +114,6 @@ export function AppShell({ children, totalCount, activeFolderId }: AppShellProps
     .filter((folder) => !deletedFolderIds.includes(folder.id))
     .map((folder) => ({
       ...folder,
-      name: renamedFolders[folder.id] ?? folder.name,
       count: Math.max(
         0,
         folder.count -
@@ -198,13 +162,26 @@ export function AppShell({ children, totalCount, activeFolderId }: AppShellProps
     if (activeFolderId === folder.id) router.replace("/");
   };
 
-  const handleEditFolder = (folder: Folder, name: string) => {
-    window.localStorage.setItem(
-      RENAMED_FOLDERS_STORAGE_KEY,
-      JSON.stringify({ ...renamedFolders, [folder.id]: name }),
-    );
+  const handleEditFolder = async (folder: Folder, name: string) => {
+    const { data, error } = await supabase
+      .from("folders")
+      .update({ name })
+      .eq("id", folder.id)
+      .select("id, name")
+      .single();
 
-    window.dispatchEvent(new Event(CUSTOM_FOLDERS_EVENT));
+    if (error) {
+      console.error("Failed to update folder", error);
+      return;
+    }
+
+    setDatabaseFolders((currentFolders) =>
+      currentFolders.map((currentFolder) =>
+        currentFolder.id === String(data.id)
+          ? { ...currentFolder, name: data.name }
+          : currentFolder,
+      ),
+    );
     setFolderToEdit(null);
   };
 
