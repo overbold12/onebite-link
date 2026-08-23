@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   deleteBookmark,
   updateBookmark,
@@ -8,6 +8,7 @@ import {
   useDeletedBookmarks,
   useStoredBookmarks,
 } from "@/hooks/use-bookmarks";
+import { createClient } from "@/utils/supabase/client";
 import type { Bookmark, Folder } from "./types";
 import { SearchIcon } from "./icons";
 import { DeleteLinkModal } from "./delete-link-modal";
@@ -31,6 +32,7 @@ export function LinkGrid({
   description = "저장해 둔 링크를 한눈에 확인해 보세요.",
   folderId,
 }: LinkGridProps) {
+  const supabase = useMemo(() => createClient(), []);
   const [bookmarkToEdit, setBookmarkToEdit] = useState<Bookmark | null>(null);
   const [bookmarkToDelete, setBookmarkToDelete] = useState<Bookmark | null>(null);
   const storedBookmarks = useStoredBookmarks();
@@ -55,7 +57,25 @@ export function LinkGrid({
     setBookmarkToDelete(null);
   };
 
-  const handleSaveEdit = (bookmark: Bookmark) => {
+  const handleSaveEdit = async (bookmark: Bookmark) => {
+    const { data, error } = await supabase
+      .from("links")
+      .update({
+        title: bookmark.title,
+        description: bookmark.description,
+        folder_id: bookmark.folderId,
+      })
+      .eq("id", bookmark.id)
+      .select("id")
+      .single();
+
+    if (error) {
+      console.error("Failed to update link", error);
+      return;
+    }
+
+    if (String(data.id) !== bookmark.id) return;
+
     updateBookmark(bookmark);
     setBookmarkToEdit(null);
   };
