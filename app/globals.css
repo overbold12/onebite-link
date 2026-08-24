@@ -31,6 +31,8 @@
   --shadow-danger: 0 7px 18px rgba(240, 68, 82, 0.2);
   --shadow-danger-hover: 0 9px 22px rgba(217, 54, 69, 0.24);
   --header-background: rgba(255, 255, 255, 0.88);
+  --auth-glow: rgba(49, 130, 246, 0.13);
+  --shadow-auth-card: 0 16px 44px rgba(25, 31, 40, 0.08);
 
   --folder-design: #8b7cf6;
   --folder-development: #3182f6;
@@ -145,6 +147,16 @@ select:focus-visible {
   background: var(--disabled);
   box-shadow: none;
   transform: none;
+}
+
+.auth-input:focus {
+  background: var(--surface);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.auth-link:hover {
+  color: var(--accent-hover);
+  opacity: 0.8;
 }
 
 .secondary-button:hover {
