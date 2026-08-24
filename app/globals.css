@@ -159,6 +159,10 @@ select:focus-visible {
   opacity: 0.8;
 }
 
+.auth-toast {
+  animation: auth-toast-in 0.24s ease-out;
+}
+
 .secondary-button:hover {
   background: var(--surface-accent-strong);
   color: var(--accent-hover);
@@ -327,6 +331,13 @@ select:focus-visible {
   from {
     opacity: 0;
     transform: translateY(10px) scale(0.98);
+  }
+}
+
+@keyframes auth-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -10px);
   }
 }
 

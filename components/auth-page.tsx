@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LinkIcon } from "./icons";
+import { SignupForm } from "./signup-form";
 
 type AuthPageProps = {
   mode: "login" | "signup";
@@ -62,67 +63,52 @@ export function AuthPage({ mode }: AuthPageProps) {
             </p>
           </div>
 
-          <form className="mt-8 space-y-5">
-            <div>
-              <label
-                htmlFor={`${mode}-email`}
-                className="block text-[14px] font-semibold text-[var(--text)]"
-              >
-                이메일
-              </label>
-              <input
-                id={`${mode}-email`}
-                name="email"
-                type="email"
-                autoComplete="email"
-                placeholder="name@example.com"
-                className="auth-input mt-2 block h-[54px] w-full rounded-xl border-0 bg-[var(--background)] px-4 text-[17px] text-[var(--text)] outline-none placeholder:text-[var(--text-placeholder)]"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor={`${mode}-password`}
-                className="block text-[14px] font-semibold text-[var(--text)]"
-              >
-                비밀번호
-              </label>
-              <input
-                id={`${mode}-password`}
-                name="password"
-                type="password"
-                autoComplete={isSignup ? "new-password" : "current-password"}
-                placeholder="비밀번호를 입력해 주세요"
-                className="auth-input mt-2 block h-[54px] w-full rounded-xl border-0 bg-[var(--background)] px-4 text-[17px] text-[var(--text)] outline-none placeholder:text-[var(--text-placeholder)]"
-              />
-            </div>
-
-            {isSignup ? (
+          {isSignup ? (
+            <SignupForm />
+          ) : (
+            <form className="mt-8 space-y-5">
               <div>
                 <label
-                  htmlFor="signup-password-confirm"
+                  htmlFor="login-email"
                   className="block text-[14px] font-semibold text-[var(--text)]"
                 >
-                  비밀번호 확인
+                  이메일
                 </label>
                 <input
-                  id="signup-password-confirm"
-                  name="passwordConfirm"
-                  type="password"
-                  autoComplete="new-password"
-                  placeholder="비밀번호를 한 번 더 입력해 주세요"
+                  id="login-email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="name@example.com"
                   className="auth-input mt-2 block h-[54px] w-full rounded-xl border-0 bg-[var(--background)] px-4 text-[17px] text-[var(--text)] outline-none placeholder:text-[var(--text-placeholder)]"
                 />
               </div>
-            ) : null}
 
-            <button
-              type="button"
-              className="primary-button mt-2 h-[54px] w-full rounded-xl bg-[var(--accent)] px-5 text-[17px] font-bold text-white shadow-[var(--shadow-button)]"
-            >
-              {copy.buttonLabel}
-            </button>
-          </form>
+              <div>
+                <label
+                  htmlFor="login-password"
+                  className="block text-[14px] font-semibold text-[var(--text)]"
+                >
+                  비밀번호
+                </label>
+                <input
+                  id="login-password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  placeholder="비밀번호를 입력해 주세요"
+                  className="auth-input mt-2 block h-[54px] w-full rounded-xl border-0 bg-[var(--background)] px-4 text-[17px] text-[var(--text)] outline-none placeholder:text-[var(--text-placeholder)]"
+                />
+              </div>
+
+              <button
+                type="button"
+                className="primary-button mt-2 h-[54px] w-full rounded-xl bg-[var(--accent)] px-5 text-[17px] font-bold text-white shadow-[var(--shadow-button)]"
+              >
+                {copy.buttonLabel}
+              </button>
+            </form>
+          )}
 
           <p className="mt-6 text-center text-[14px] text-[var(--text-sub)]">
             {copy.footerText}{" "}
