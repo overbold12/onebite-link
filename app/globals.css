@@ -20,6 +20,8 @@
   --error: #f04452;
   --error-hover: #d93645;
   --error-surface: #fff0f1;
+  --success: #16855b;
+  --success-surface: #eaf8f1;
   --focus: rgba(49, 130, 246, 0.22);
   --overlay: rgba(25, 31, 40, 0.42);
   --shadow-card: 0 2px 10px rgba(25, 31, 40, 0.05);

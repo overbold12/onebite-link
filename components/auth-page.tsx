@@ -1,10 +1,16 @@
 import Link from "next/link";
 import { LinkIcon } from "./icons";
+import { ForgotPasswordForm } from "./forgot-password-form";
 import { LoginForm } from "./login-form";
+import { ResetPasswordForm } from "./reset-password-form";
 import { SignupForm } from "./signup-form";
 
 type AuthPageProps = {
-  mode: "login" | "signup";
+  mode: "login" | "signup" | "forgot-password" | "reset-password";
+  notice?: {
+    tone: "success" | "error";
+    message: string;
+  };
 };
 
 const authCopy = {
@@ -22,11 +28,24 @@ const authCopy = {
     footerLinkLabel: "로그인",
     footerHref: "/login",
   },
+  "forgot-password": {
+    title: "비밀번호를 다시 설정해요",
+    description: "가입한 이메일로 비밀번호 재설정 링크를 보내드릴게요.",
+    footerText: "비밀번호가 기억났나요?",
+    footerLinkLabel: "로그인",
+    footerHref: "/login",
+  },
+  "reset-password": {
+    title: "새 비밀번호를 입력해 주세요",
+    description: "앞으로 사용할 새로운 비밀번호를 설정해 주세요.",
+    footerText: "재설정 링크가 만료되었나요?",
+    footerLinkLabel: "링크 다시 받기",
+    footerHref: "/forgot-password",
+  },
 } as const;
 
-export function AuthPage({ mode }: AuthPageProps) {
+export function AuthPage({ mode, notice }: AuthPageProps) {
   const copy = authCopy[mode];
-  const isSignup = mode === "signup";
 
   return (
     <main className="relative flex min-h-svh items-center justify-center overflow-hidden bg-[var(--background)] px-5 py-10 sm:py-14">
@@ -62,13 +81,40 @@ export function AuthPage({ mode }: AuthPageProps) {
             </p>
           </div>
 
-          {isSignup ? (
-            <SignupForm />
-          ) : (
-            <LoginForm />
-          )}
+          {notice ? (
+            <p
+              role={notice.tone === "error" ? "alert" : "status"}
+              className={`mt-5 rounded-xl px-4 py-3 text-center text-[13px] font-semibold leading-5 ${
+                notice.tone === "success"
+                  ? "bg-[var(--success-surface)] text-[var(--success)]"
+                  : "bg-[var(--error-surface)] text-[var(--error)]"
+              }`}
+            >
+              {notice.message}
+            </p>
+          ) : null}
 
-          <p className="mt-6 text-center text-[14px] text-[var(--text-sub)]">
+          {mode === "login" ? <LoginForm /> : null}
+          {mode === "signup" ? <SignupForm /> : null}
+          {mode === "forgot-password" ? <ForgotPasswordForm /> : null}
+          {mode === "reset-password" ? <ResetPasswordForm /> : null}
+
+          {mode === "login" ? (
+            <p className="mt-6 text-center text-[14px]">
+              <Link
+                href="/forgot-password"
+                className="auth-link font-semibold text-[var(--text-sub)]"
+              >
+                비밀번호를 잊으셨나요?
+              </Link>
+            </p>
+          ) : null}
+
+          <p
+            className={`${
+              mode === "login" ? "mt-3" : "mt-6"
+            } text-center text-[14px] text-[var(--text-sub)]`}
+          >
             {copy.footerText}{" "}
             <Link
               href={copy.footerHref}
