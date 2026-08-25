@@ -204,6 +204,15 @@ select:focus-visible {
   color: var(--text-sub);
 }
 
+.logout-button:hover {
+  background: var(--error-surface);
+  color: var(--error);
+}
+
+.logout-button:active {
+  transform: scale(0.98);
+}
+
 .folder-actions,
 .folder-count {
   transition: opacity 0.15s ease;

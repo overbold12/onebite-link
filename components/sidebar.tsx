@@ -1,6 +1,13 @@
 import Link from "next/link";
 import type { Folder } from "./types";
-import { FolderIcon, GridIcon, PencilIcon, PlusIcon, TrashIcon } from "./icons";
+import {
+  FolderIcon,
+  GridIcon,
+  LogoutIcon,
+  PencilIcon,
+  PlusIcon,
+  TrashIcon,
+} from "./icons";
 
 type SidebarProps = {
   folders: Folder[];
@@ -100,7 +107,7 @@ export function Sidebar({
         </div>
       </nav>
 
-      <div className="absolute bottom-6 left-5 right-5 hidden overflow-hidden rounded-2xl bg-[var(--surface-accent)] p-4 md:block">
+      <div className="absolute bottom-[84px] left-5 right-5 hidden overflow-hidden rounded-2xl bg-[var(--surface-accent)] p-4 md:block">
         <span className="absolute -right-5 -top-7 h-20 w-20 rounded-full bg-[var(--surface-accent-strong)]" />
         <span className="relative flex h-8 w-8 items-center justify-center rounded-[10px] bg-[var(--surface)] text-[var(--accent)] shadow-sm">
           <PlusIcon className="h-4 w-4" />
@@ -108,6 +115,16 @@ export function Sidebar({
         <p className="relative mt-3 text-[12px] font-bold text-[var(--text)]">기억하고 싶은 순간</p>
         <p className="relative mt-1 text-[11px] leading-4 text-[var(--text-sub)]">좋은 페이지를 발견하면<br />한입에 저장해 보세요.</p>
       </div>
+
+      <form action="/auth/signout" method="post" className="mt-6 border-t border-[var(--border)] pt-3 md:absolute md:bottom-6 md:left-5 md:right-5 md:mt-0">
+        <button
+          type="submit"
+          className="logout-button flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-[14px] font-semibold text-[var(--text-sub)]"
+        >
+          <LogoutIcon className="h-5 w-5" />
+          <span>로그아웃</span>
+        </button>
+      </form>
     </aside>
   );
 }
