@@ -1,6 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
+function isProtectedRoute(pathname: string) {
+  return (
+    pathname === "/" ||
+    pathname === "/new" ||
+    pathname.startsWith("/folder/")
+  );
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -30,7 +38,16 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  await supabase.auth.getClaims();
+  const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims;
+
+  if (isProtectedRoute(request.nextUrl.pathname) && !claims?.sub) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/login";
+    loginUrl.search = "";
+
+    return NextResponse.redirect(loginUrl);
+  }
 
   return supabaseResponse;
 }
