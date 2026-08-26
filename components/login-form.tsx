@@ -1,6 +1,7 @@
 "use client";
 
 import type { AuthError } from "@supabase/supabase-js";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
@@ -34,12 +35,21 @@ function getLoginErrorMessage(error: AuthError) {
   }
 }
 
+function getKakaoLoginErrorMessage(error: AuthError) {
+  if (error.code === "provider_disabled") {
+    return "현재 카카오 로그인을 사용할 수 없습니다.";
+  }
+
+  return getLoginErrorMessage(error);
+}
+
 export function LoginForm() {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isKakaoSubmitting, setIsKakaoSubmitting] = useState(false);
   const [toast, setToast] = useState<ErrorToast | null>(null);
 
   const isFormComplete = email.trim().length > 0 && password.length > 0;
@@ -58,7 +68,7 @@ export function LoginForm() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!isFormComplete || isSubmitting) return;
+    if (!isFormComplete || isSubmitting || isKakaoSubmitting) return;
 
     setToast(null);
     setIsSubmitting(true);
@@ -88,6 +98,36 @@ export function LoginForm() {
     }
   };
 
+  const handleKakaoLogin = async () => {
+    if (isSubmitting || isKakaoSubmitting) return;
+
+    setToast(null);
+    setIsKakaoSubmitting(true);
+
+    try {
+      const callbackUrl = new URL(
+        "/auth/callback?next=/",
+        window.location.origin,
+      ).toString();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "kakao",
+        options: {
+          redirectTo: callbackUrl,
+        },
+      });
+
+      if (error) {
+        showError(getKakaoLoginErrorMessage(error));
+      }
+    } catch {
+      showError(
+        "카카오 로그인을 시작하지 못했습니다. 네트워크 연결을 확인해 주세요.",
+      );
+    } finally {
+      setIsKakaoSubmitting(false);
+    }
+  };
+
   return (
     <>
       {toast ? (
@@ -101,54 +141,78 @@ export function LoginForm() {
         </div>
       ) : null}
 
-      <form className="mt-8 space-y-5" noValidate onSubmit={handleSubmit}>
-        <div>
-          <label
-            htmlFor="login-email"
-            className="block text-[14px] font-semibold text-[var(--text)]"
-          >
-            이메일
-          </label>
-          <input
-            id="login-email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            placeholder="name@example.com"
-            required
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            className="auth-input mt-2 block h-[54px] w-full rounded-xl border-0 bg-[var(--background)] px-4 text-[17px] text-[var(--text)] outline-none placeholder:text-[var(--text-placeholder)]"
-          />
+      <form className="mt-8" noValidate onSubmit={handleSubmit}>
+        <div className="space-y-5">
+          <div>
+            <label
+              htmlFor="login-email"
+              className="block text-[14px] font-semibold text-[var(--text)]"
+            >
+              이메일
+            </label>
+            <input
+              id="login-email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              placeholder="name@example.com"
+              required
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              className="auth-input mt-2 block h-[54px] w-full rounded-xl border-0 bg-[var(--background)] px-4 text-[17px] text-[var(--text)] outline-none placeholder:text-[var(--text-placeholder)]"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="login-password"
+              className="block text-[14px] font-semibold text-[var(--text)]"
+            >
+              비밀번호
+            </label>
+            <input
+              id="login-password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              placeholder="비밀번호를 입력해 주세요"
+              required
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              className="auth-input mt-2 block h-[54px] w-full rounded-xl border-0 bg-[var(--background)] px-4 text-[17px] text-[var(--text)] outline-none placeholder:text-[var(--text-placeholder)]"
+            />
+          </div>
         </div>
 
-        <div>
-          <label
-            htmlFor="login-password"
-            className="block text-[14px] font-semibold text-[var(--text)]"
+        <div className="mt-5 space-y-3">
+          <button
+            type="submit"
+            disabled={!isFormComplete || isSubmitting || isKakaoSubmitting}
+            className="primary-button h-[54px] w-full rounded-xl bg-[var(--accent)] px-5 text-[17px] font-bold text-white shadow-[var(--shadow-button)]"
           >
-            비밀번호
-          </label>
-          <input
-            id="login-password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            placeholder="비밀번호를 입력해 주세요"
-            required
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            className="auth-input mt-2 block h-[54px] w-full rounded-xl border-0 bg-[var(--background)] px-4 text-[17px] text-[var(--text)] outline-none placeholder:text-[var(--text-placeholder)]"
-          />
-        </div>
+            {isSubmitting ? "로그인 중..." : "로그인"}
+          </button>
 
-        <button
-          type="submit"
-          disabled={!isFormComplete || isSubmitting}
-          className="primary-button mt-2 h-[54px] w-full rounded-xl bg-[var(--accent)] px-5 text-[17px] font-bold text-white shadow-[var(--shadow-button)]"
-        >
-          {isSubmitting ? "로그인 중..." : "로그인"}
-        </button>
+          <button
+            type="button"
+            aria-label={
+              isKakaoSubmitting
+                ? "카카오 로그인 화면으로 이동 중"
+                : "카카오 로그인"
+            }
+            disabled={isSubmitting || isKakaoSubmitting}
+            onClick={handleKakaoLogin}
+            className="kakao-login-button block w-full overflow-hidden rounded-xl"
+          >
+            <Image
+              src="/kakao_login_large_wide.png"
+              alt=""
+              width={600}
+              height={90}
+              className="h-auto w-full"
+            />
+          </button>
+        </div>
       </form>
     </>
   );

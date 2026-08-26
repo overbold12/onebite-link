@@ -151,6 +151,22 @@ select:focus-visible {
   transform: none;
 }
 
+.kakao-login-button:hover {
+  box-shadow: 0 7px 18px rgba(25, 31, 40, 0.12);
+  transform: translateY(-1px);
+}
+
+.kakao-login-button:active {
+  transform: scale(0.98);
+}
+
+.kakao-login-button:disabled {
+  cursor: wait;
+  box-shadow: none;
+  opacity: 0.65;
+  transform: none;
+}
+
 .auth-input:focus {
   background: var(--surface);
   box-shadow: 0 0 0 2px var(--accent);
