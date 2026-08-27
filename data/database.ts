@@ -30,15 +30,23 @@ function getDomain(url: string) {
 
 export const getFoldersAndLinks = cache(async () => {
   const supabase = await createClient();
+  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+  const userId = claimsData?.claims?.sub ?? null;
+
+  if (claimsError) throw claimsError;
+  if (!userId) return { folders: [], bookmarks: [], userId };
+
   const [foldersResult, linksResult] = await Promise.all([
     supabase
       .from("folders")
       .select("id, name, created_at")
+      .eq("user_id", userId)
       .order("created_at", { ascending: true })
       .order("id", { ascending: true }),
     supabase
       .from("links")
       .select("id, url, title, description, thumbnail_url, created_at, folder_id")
+      .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .order("id", { ascending: false }),
   ]);
@@ -85,5 +93,5 @@ export const getFoldersAndLinks = cache(async () => {
     };
   });
 
-  return { folders, bookmarks };
+  return { folders, bookmarks, userId };
 });

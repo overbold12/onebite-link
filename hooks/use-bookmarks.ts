@@ -6,6 +6,7 @@ import type { Bookmark } from "@/components/types";
 export const BOOKMARKS_STORAGE_KEY = "onebite-link.bookmarks";
 export const DELETED_BOOKMARKS_STORAGE_KEY = "onebite-link.deleted-bookmarks";
 export const BOOKMARK_EDITS_STORAGE_KEY = "onebite-link.bookmark-edits";
+export const BOOKMARKS_USER_ID_STORAGE_KEY = "onebite-link.user-id";
 export const BOOKMARKS_CHANGED_EVENT = "onebite-link:bookmarks-changed";
 
 type DeletedBookmark = Pick<Bookmark, "id" | "folderId">;
@@ -137,6 +138,35 @@ export function useBookmarkEdits() {
     getServerSnapshot,
   );
   return useMemo(() => parseBookmarkEdits(snapshot), [snapshot]);
+}
+
+export function resetBookmarkCacheForUser(userId: string | null) {
+  const storedUserId = window.localStorage.getItem(BOOKMARKS_USER_ID_STORAGE_KEY);
+
+  if (userId !== null && storedUserId === userId) return false;
+
+  const storageKeys = [
+    BOOKMARKS_STORAGE_KEY,
+    DELETED_BOOKMARKS_STORAGE_KEY,
+    BOOKMARK_EDITS_STORAGE_KEY,
+  ];
+  const hadCachedData = storageKeys.some(
+    (storageKey) => window.localStorage.getItem(storageKey) !== null,
+  );
+
+  storageKeys.forEach((storageKey) => window.localStorage.removeItem(storageKey));
+
+  if (userId === null) {
+    window.localStorage.removeItem(BOOKMARKS_USER_ID_STORAGE_KEY);
+  } else {
+    window.localStorage.setItem(BOOKMARKS_USER_ID_STORAGE_KEY, userId);
+  }
+
+  if (hadCachedData || storedUserId !== userId) {
+    window.dispatchEvent(new Event(BOOKMARKS_CHANGED_EVENT));
+  }
+
+  return true;
 }
 
 export function saveBookmark(bookmark: Bookmark) {

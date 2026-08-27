@@ -18,6 +18,7 @@ import { LinkCard } from "./link-card";
 type LinkGridProps = {
   bookmarks: Bookmark[];
   folders: Folder[];
+  userId: string | null;
   title?: string;
   eyebrow?: string;
   description?: string;
@@ -27,6 +28,7 @@ type LinkGridProps = {
 export function LinkGrid({
   bookmarks,
   folders,
+  userId,
   title = "모든 링크",
   eyebrow = "My collection",
   description = "저장해 둔 링크를 한눈에 확인해 보세요.",
@@ -53,10 +55,13 @@ export function LinkGrid({
   const allBookmarks = [...visibleStoredBookmarks, ...visibleInitialBookmarks];
 
   const handleConfirmDelete = async (bookmark: Bookmark) => {
+    if (!userId) return;
+
     const { data, error } = await supabase
       .from("links")
       .delete()
       .eq("id", bookmark.id)
+      .eq("user_id", userId)
       .select("id")
       .single();
 
@@ -72,6 +77,8 @@ export function LinkGrid({
   };
 
   const handleSaveEdit = async (bookmark: Bookmark) => {
+    if (!userId) return;
+
     const { data, error } = await supabase
       .from("links")
       .update({
@@ -80,6 +87,7 @@ export function LinkGrid({
         folder_id: bookmark.folderId,
       })
       .eq("id", bookmark.id)
+      .eq("user_id", userId)
       .select("id")
       .single();
 

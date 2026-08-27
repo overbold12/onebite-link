@@ -23,16 +23,21 @@ export async function generateMetadata({ params }: FolderPageProps): Promise<Met
 
 export default async function FolderPage({ params }: FolderPageProps) {
   const { folderId } = await params;
-  const { bookmarks, folders } = await getFoldersAndLinks();
+  const { bookmarks, folders, userId } = await getFoldersAndLinks();
   const folder = folders.find((item) => item.id === folderId);
 
   if (!folder) notFound();
 
   return (
-    <AppShell totalCount={bookmarks.length} activeFolderId={folder.id}>
+    <AppShell
+      totalCount={bookmarks.length}
+      activeFolderId={folder.id}
+      initialUserId={userId}
+    >
       <LinkGrid
         bookmarks={bookmarks}
         folders={folders}
+        userId={userId}
         title={folder.name}
         eyebrow="Folder collection"
         description={`${folder.name} 폴더에 저장된 링크를 모아봤어요.`}
