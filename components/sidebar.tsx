@@ -116,15 +116,23 @@ export function Sidebar({
         <p className="relative mt-1 text-[11px] leading-4 text-[var(--text-sub)]">좋은 페이지를 발견하면<br />한입에 저장해 보세요.</p>
       </div>
 
-      <form action="/auth/signout" method="post" className="mt-6 border-t border-[var(--border)] pt-3 md:absolute md:bottom-6 md:left-5 md:right-5 md:mt-0">
-        <button
-          type="submit"
-          className="logout-button flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-[14px] font-semibold text-[var(--text-sub)]"
+      <div className="mt-6 border-t border-[var(--border)] pt-3 md:absolute md:bottom-4 md:left-5 md:right-5 md:mt-0">
+        <form action="/auth/signout" method="post">
+          <button
+            type="submit"
+            className="logout-button flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-[14px] font-semibold text-[var(--text-sub)]"
+          >
+            <LogoutIcon className="h-5 w-5" />
+            <span>로그아웃</span>
+          </button>
+        </form>
+        <Link
+          href="/privacy"
+          className="privacy-link mt-1 block px-3 text-center text-[12px] font-medium text-[var(--text-muted)]"
         >
-          <LogoutIcon className="h-5 w-5" />
-          <span>로그아웃</span>
-        </button>
-      </form>
+          개인정보 처리방침
+        </Link>
+      </div>
     </aside>
   );
 }

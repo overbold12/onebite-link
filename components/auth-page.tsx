@@ -123,6 +123,17 @@ export function AuthPage({ mode, notice }: AuthPageProps) {
               {copy.footerLinkLabel}
             </Link>
           </p>
+
+          {mode === "signup" ? (
+            <p className="mt-3 text-center text-[12px]">
+              <Link
+                href="/privacy"
+                className="privacy-link font-medium text-[var(--text-muted)]"
+              >
+                개인정보 처리방침
+              </Link>
+            </p>
+          ) : null}
         </div>
       </section>
     </main>
