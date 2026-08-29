@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AuthPage } from "@/components/auth-page";
 import { createClient } from "@/utils/supabase/server";
+import { createPageMetadata } from "@/utils/metadata";
 
-export const metadata: Metadata = {
-  title: "새 비밀번호 설정 | 한입 링크",
-  description: "한입 링크 계정의 새 비밀번호를 설정하세요.",
-};
+export const metadata: Metadata = createPageMetadata(
+  "새 비밀번호 설정 | 한입 링크",
+  "한입 링크 계정의 새 비밀번호를 설정하세요.",
+);
 
 export default async function ResetPasswordPage() {
   const supabase = await createClient();

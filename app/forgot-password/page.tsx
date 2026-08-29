@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { AuthPage } from "@/components/auth-page";
+import { createPageMetadata } from "@/utils/metadata";
 
-export const metadata: Metadata = {
-  title: "비밀번호 찾기 | 한입 링크",
-  description: "이메일로 비밀번호 재설정 링크를 받아보세요.",
-};
+export const metadata: Metadata = createPageMetadata(
+  "비밀번호 찾기 | 한입 링크",
+  "이메일로 비밀번호 재설정 링크를 받아보세요.",
+);
 
 type ForgotPasswordPageProps = {
   searchParams: Promise<{ error?: string }>;

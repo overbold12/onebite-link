@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import { AppShell } from "@/components/app-shell";
 import { NewLinkForm } from "@/components/new-link-form";
 import { getFoldersAndLinks } from "@/data/database";
+import { createPageMetadata } from "@/utils/metadata";
 
-export const metadata: Metadata = {
-  title: "새 링크 | 한입 링크",
-  description: "새로운 링크를 폴더에 저장하세요.",
-};
+export const metadata: Metadata = createPageMetadata(
+  "새 링크 | 한입 링크",
+  "새로운 링크를 폴더에 저장하세요.",
+);
 
 export default async function NewLinkPage() {
   const { bookmarks, folders, userId } = await getFoldersAndLinks();

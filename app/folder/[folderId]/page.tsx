@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { LinkGrid } from "@/components/link-grid";
 import { getFoldersAndLinks } from "@/data/database";
+import { createPageMetadata } from "@/utils/metadata";
 
 type FolderPageProps = {
   params: Promise<{ folderId: string }>;
@@ -15,10 +16,10 @@ export async function generateMetadata({ params }: FolderPageProps): Promise<Met
 
   if (!folder) return {};
 
-  return {
-    title: `${folder.name} | 한입 링크`,
-    description: `${folder.name} 폴더에 저장한 링크를 확인하세요.`,
-  };
+  return createPageMetadata(
+    `${folder.name} | 한입 링크`,
+    `${folder.name} 폴더에 저장한 링크를 확인하세요.`,
+  );
 }
 
 export default async function FolderPage({ params }: FolderPageProps) {

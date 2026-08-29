@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { AuthPage } from "@/components/auth-page";
+import { createPageMetadata } from "@/utils/metadata";
 
-export const metadata: Metadata = {
-  title: "로그인 | 한입 링크",
-  description: "한입 링크에 로그인하세요.",
-};
+export const metadata: Metadata = createPageMetadata(
+  "로그인 | 한입 링크",
+  "한입 링크에 로그인하세요.",
+);
 
 type LoginPageProps = {
   searchParams: Promise<{
